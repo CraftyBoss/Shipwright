@@ -775,7 +775,8 @@ static BetterSceneSelectEntry sBetterScenes[] = {
         { "Flooded Grotto (Gerudo Valley)", "Geflutete Grotte (Gerudotal)", "Grotte Inondee (Vallee Gerudo)", 0x1A, 0 },
         { "Flooded Grotto (Hyrule Field)", "Geflutete Grotte (Hylianische Steppe)", "Grotte Inondee (Plaine d'Hyrule)", 0x1B, 0 },
     }},
-    { "50:Debug (Use with caution)", "50:Debug (Mit Vorsicht benutzen)", "50:Debug (A utiliser avec prudence)", Select_LoadGame, 10, {
+    { "50:Debug (Use with caution)", "50:Debug (Mit Vorsicht benutzen)", "50:Debug (A utiliser avec prudence)", Select_LoadGame, 11, {
+        { "Battle Hall", "Battle Hall", "Battle Hall", ENTR_BESITU_0, 0 },
         { "Test Room", "Test Raum", "Salle de Test", ENTR_BESITU_0, 0 },
         { "SRD Map", "SRD Karte", "Carte SRD", ENTR_SASATEST_0, 0 },
         { "Test Map", "Test Karte", "Carte de Test", ENTR_TEST01_0, 0 },

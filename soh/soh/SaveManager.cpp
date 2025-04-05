@@ -1289,7 +1289,7 @@ void SaveManager::SaveFileThreaded(int fileNum, SaveContext* saveContext, int se
 // SaveFileThreaded This should never be called with threaded == false except during file creation
 void SaveManager::SaveSection(int fileNum, int sectionID, bool threaded) {
     // Don't save in Boss rush.
-    if (fileNum == 0xFF || fileNum == 0xFE) {
+    if (fileNum == 0xFF || fileNum == 0xFE || fileNum == 0xFD) {
         return;
     }
     // Don't save a nonexistent section

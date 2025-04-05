@@ -1591,7 +1591,7 @@ typedef struct {
     /* 0x1CAD4 */ s16 newFileNameCharCount;
     /* 0x1CAD6 */ s16 unk_1CAD6[5];
     s16 logoAlpha;
-    s8 questType[3]; // 0 for Normal, 1 for MQ
+    s8 questType[4]; // 0 for Normal, 1 for MQ, 2 for Boss Rush, 3 for Battle Quest
     StickDirectionPrompt stickLeftPrompt;
     StickDirectionPrompt stickRightPrompt;
     f32 arrowAnimTween;

@@ -16,6 +16,8 @@ void Save_LoadFile(void);
 
 void BossRush_InitSave(void);
 
+void BattleHall_InitSave(void);
+
 /**
  *  Initialize new save.
  *  This save has an empty inventory with 3 hearts and single magic.
@@ -40,6 +42,11 @@ void Sram_InitDebugSave(void) {
 void Sram_InitBossRushSave(void) {
     Save_InitFile(false);
     BossRush_InitSave();
+}
+
+void Sram_InitBattleHallSave(void) {
+    Save_InitFile(false);
+    BattleHall_InitSave();
 }
 
 static s16 sDungeonEntrances[] = {

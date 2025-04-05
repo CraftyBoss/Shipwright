@@ -21,6 +21,7 @@
 #include "soh/Enhancements/custom-message/CustomMessageTypes.h"
 #include "soh/Enhancements/enhancementTypes.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
+#include "soh/Mods/BattleHall/battle-hall.h"
 #include <assert.h>
 #include "z64save.h"
 #include "soh/SaveManager.h"
@@ -703,10 +704,11 @@ static void DrawMoreInfo(FileChooseContext* this, s16 fileIndex, u8 alpha) {
 }
 
 #define MIN_QUEST (ResourceMgr_GameHasOriginal() ? QUEST_NORMAL : QUEST_MASTER)
-#define MAX_QUEST QUEST_BOSSRUSH
+#define MAX_QUEST QUEST_BATTLEHALL
 
 void Sram_InitDebugSave(void);
 void Sram_InitBossRushSave();
+void Sram_InitBattleHallSave();
 
 void FileChoose_DrawTextureI8(GraphicsContext* gfxCtx, const void* texture, s16 texWidth, s16 texHeight, s16 rectLeft,
                               s16 rectTop, s16 rectWidth, s16 rectHeight, s16 dsdx, s16 dtdy) {
@@ -1340,7 +1342,8 @@ void FileChoose_UpdateQuestMenu(GameState* thisx) {
     if (CHECK_BTN_ALL(input->press.button, BTN_A)) {
         gSaveContext.ship.quest.id = this->questType[this->buttonIndex];
 
-        if (this->questType[this->buttonIndex] == QUEST_BOSSRUSH) {
+        if (this->questType[this->buttonIndex] == QUEST_BOSSRUSH ||
+            this->questType[this->buttonIndex] == QUEST_BATTLEHALL) {
             Audio_PlaySoundGeneral(NA_SE_SY_FSEL_DECIDE_L, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
                                    &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
             this->prevConfigMode = this->configMode;
@@ -1393,6 +1396,14 @@ void FileChoose_UpdateBossRushMenu(GameState* thisx) {
     Input* input = &this->state.input[0];
     bool dpad = CVarGetInteger(CVAR_SETTING("DpadInText"), 0);
 
+    u8 optionsAmount = IS_BATTLE_HALL ? BattleHall_GetSettingOptionsAmount(this->bossRushIndex)
+                                      : BossRush_GetSettingOptionsAmount(this->bossRushIndex);
+
+    u8 optionsMax = IS_BATTLE_HALL ? BattleHall_GetSettingsAmount() : BR_OPTIONS_MAX;
+
+    u8 maxOptionsPerPage = min(optionsMax, BOSSRUSH_MAX_OPTIONS_ON_SCREEN);
+
+
     // Fade in elements after opening Boss Rush options menu
     this->bossRushUIAlpha += 25;
     if (this->bossRushUIAlpha > 255) {
@@ -1410,13 +1421,13 @@ void FileChoose_UpdateBossRushMenu(GameState* thisx) {
         // Move down
         if (this->stickRelY < -30 || (dpad && CHECK_BTN_ANY(input->press.button, BTN_DDOWN))) {
             // When selecting past the last option, cycle back to the first option.
-            if ((this->bossRushIndex + 1) > BR_OPTIONS_MAX - 1) {
+            if ((this->bossRushIndex + 1) > optionsMax - 1) {
                 this->bossRushIndex = 0;
                 this->bossRushOffset = 0;
             } else {
                 this->bossRushIndex++;
                 // When last visible option is selected when moving down, offset the list down by one.
-                if (this->bossRushIndex - this->bossRushOffset > BOSSRUSH_MAX_OPTIONS_ON_SCREEN - 1) {
+                if (this->bossRushIndex - this->bossRushOffset > maxOptionsPerPage - 1) {
                     this->bossRushOffset++;
                 }
             }
@@ -1424,8 +1435,8 @@ void FileChoose_UpdateBossRushMenu(GameState* thisx) {
             // When selecting past the first option, cycle back to the last option and offset the list to view it
             // properly.
             if ((this->bossRushIndex - 1) < 0) {
-                this->bossRushIndex = BR_OPTIONS_MAX - 1;
-                this->bossRushOffset = this->bossRushIndex - BOSSRUSH_MAX_OPTIONS_ON_SCREEN + 1;
+                this->bossRushIndex = optionsMax - 1;
+                this->bossRushOffset = this->bossRushIndex - maxOptionsPerPage + 1;
             } else {
                 // When first visible option is selected when moving up, offset the list up by one.
                 if (this->bossRushIndex - this->bossRushOffset == 0) {
@@ -1443,8 +1454,7 @@ void FileChoose_UpdateBossRushMenu(GameState* thisx) {
     if (ABS(this->stickRelX) > 30 || (dpad && CHECK_BTN_ANY(input->press.button, BTN_DLEFT | BTN_DRIGHT))) {
         if (this->stickRelX > 30 || (dpad && CHECK_BTN_ANY(input->press.button, BTN_DRIGHT))) {
             // If exceeding the amount of choices for the selected option, cycle back to the first.
-            if ((gSaveContext.ship.quest.data.bossRush.options[this->bossRushIndex] + 1) ==
-                BossRush_GetSettingOptionsAmount(this->bossRushIndex)) {
+            if ((gSaveContext.ship.quest.data.bossRush.options[this->bossRushIndex] + 1) == optionsAmount) {
                 gSaveContext.ship.quest.data.bossRush.options[this->bossRushIndex] = 0;
             } else {
                 gSaveContext.ship.quest.data.bossRush.options[this->bossRushIndex]++;
@@ -1452,8 +1462,7 @@ void FileChoose_UpdateBossRushMenu(GameState* thisx) {
         } else if (this->stickRelX < -30 || (dpad && CHECK_BTN_ANY(input->press.button, BTN_DLEFT))) {
             // If cycling back when already at the first choice for the selected option, cycle back to the last choice.
             if ((gSaveContext.ship.quest.data.bossRush.options[this->bossRushIndex] - 1) < 0) {
-                gSaveContext.ship.quest.data.bossRush.options[this->bossRushIndex] =
-                    BossRush_GetSettingOptionsAmount(this->bossRushIndex) - 1;
+                gSaveContext.ship.quest.data.bossRush.options[this->bossRushIndex] = optionsAmount - 1;
             } else {
                 gSaveContext.ship.quest.data.bossRush.options[this->bossRushIndex]--;
             }
@@ -1480,7 +1489,9 @@ void FileChoose_UpdateBossRushMenu(GameState* thisx) {
     if (CHECK_BTN_ALL(input->press.button, BTN_START) || CHECK_BTN_ALL(input->press.button, BTN_A)) {
         Audio_PlaySoundGeneral(NA_SE_SY_FSEL_DECIDE_L, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
                                &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-        this->buttonIndex = 0xFE;
+        
+        this->buttonIndex = IS_BATTLE_HALL ? 0xFD : 0xFE;
+
         this->menuMode = FS_MENU_MODE_SELECT;
         this->selectMode = SM_FADE_OUT;
         this->prevConfigMode = this->configMode;
@@ -2562,11 +2573,33 @@ void FileChoose_DrawWindowContents(GameState* thisx) {
                     ResourceMgr_GameHasOriginal() ? gTitleZeldaShieldLogoTex : gTitleZeldaShieldLogoMQTex, 160, 160);
                 FileChoose_DrawImageRGBA32(this->state.gfxCtx, 182, 180, gTitleBossRushSubtitleTex, 128, 32);
                 break;
+            case QUEST_BATTLEHALL:
+                gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 255, 255, 255, this->logoAlpha);
+                FileChoose_DrawTextureI8(this->state.gfxCtx, gTitleTheLegendOfTextTex, 72, 8, 156, 108, 72, 8, 1024,
+                                         1024);
+                FileChoose_DrawTextureI8(this->state.gfxCtx, gTitleOcarinaOfTimeTMTextTex, 96, 8, 154, 163, 96, 8, 1024,
+                                         1024);
+                FileChoose_DrawImageRGBA32(
+                    this->state.gfxCtx, 160, 135,
+                    ResourceMgr_GameHasOriginal() ? gTitleZeldaShieldLogoTex : gTitleZeldaShieldLogoMQTex, 160, 160);
+                FileChoose_DrawImageRGBA32(this->state.gfxCtx, 182, 180, gTitleBossRushSubtitleTex, 128, 32);
+                FileChoose_DrawImageRGBA32(this->state.gfxCtx, 182, 200, gTitleRandomizerSubtitleTex, 128, 32);
+                break;
         }
     } else if (this->configMode == CM_BOSS_RUSH_MENU) {
         uint8_t language = (gSaveContext.language == LANGUAGE_JPN) ? LANGUAGE_ENG : gSaveContext.language;
         uint8_t listOffset = this->bossRushOffset;
         uint8_t textAlpha = this->bossRushUIAlpha;
+        bool isAltGamemode = IS_BATTLE_HALL;
+
+        u8 optionsMax = 0;
+        if (isAltGamemode) {
+            optionsMax = BattleHall_GetSettingsAmount();
+        } else {
+            optionsMax = BR_OPTIONS_MAX;
+        }
+
+        u8 maxOptionsPerPage = min(optionsMax, BOSSRUSH_MAX_OPTIONS_ON_SCREEN);
 
         // Draw arrows to indicate that the list can scroll up or down.
         // Arrow up
@@ -2580,7 +2613,7 @@ void FileChoose_DrawWindowContents(GameState* thisx) {
                                     (arrowUpY + 8) << 2, G_TX_RENDERTILE, 0, 0, (1 << 11), (1 << 11));
         }
         // Arrow down
-        if (BR_OPTIONS_MAX - listOffset > BOSSRUSH_MAX_OPTIONS_ON_SCREEN) {
+        if (optionsMax - listOffset > maxOptionsPerPage) {
             uint16_t arrowDownX = 140;
             uint16_t arrowDownY = 181 + (this->bossRushArrowOffset / 10);
             gDPLoadTextureBlock(POLY_OPA_DISP++, gArrowDownTex, G_IM_FMT_IA, G_IM_SIZ_16b, 16, 16, 0,
@@ -2593,18 +2626,30 @@ void FileChoose_DrawWindowContents(GameState* thisx) {
         // Draw options. There's more options than what fits on the screen, so the visible options
         // depend on the current offset of the list. Currently selected option pulses in
         // color and has arrows surrounding the option.
-        for (uint8_t i = listOffset; i - listOffset < BOSSRUSH_MAX_OPTIONS_ON_SCREEN; i++) {
+        for (uint8_t i = listOffset; i - listOffset < maxOptionsPerPage; i++) {
             uint16_t textYOffset = (i - listOffset) * 16;
 
+            char* settingChoiceName = NULL;
+            char* settingName = NULL;
+            if (isAltGamemode) {
+                settingChoiceName =
+                    BattleHall_GetSettingChoiceName(i, gSaveContext.ship.quest.data.bossRush.options[i], language);
+                settingName = BattleHall_GetSettingName(i, language);
+            } else {
+                settingChoiceName =
+                    BossRush_GetSettingChoiceName(i, gSaveContext.ship.quest.data.bossRush.options[i], language);
+                settingName = BossRush_GetSettingName(i, language);
+            }
+
             // Option name.
-            Interface_DrawTextLine(this->state.gfxCtx, BossRush_GetSettingName(i, language), 65, (87 + textYOffset),
-                                   255, 255, 80, textAlpha, 0.8f, true);
+            Interface_DrawTextLine(this->state.gfxCtx, settingName, 65, (87 + textYOffset), 255, 255, 80, textAlpha,
+                                   0.8f, true);
 
             // Selected choice for option.
             uint16_t finalKerning = Interface_DrawTextLine(
-                this->state.gfxCtx,
-                BossRush_GetSettingChoiceName(i, gSaveContext.ship.quest.data.bossRush.options[i], language), 165,
-                (87 + textYOffset), 255, 255, 255, textAlpha, 0.8f, true);
+                    this->state.gfxCtx,
+                    settingChoiceName, 165,
+                    (87 + textYOffset), 255, 255, 255, textAlpha, 0.8f, true);
 
             // Draw arrows around selected option.
             if (this->bossRushIndex == i) {
@@ -3339,6 +3384,8 @@ void FileChoose_LoadGame(GameState* thisx) {
     } else {
         if (this->buttonIndex == 0xFE) {
             Sram_InitBossRushSave();
+        } else if (this->buttonIndex == 0xFD) {
+            Sram_InitBattleHallSave();
         } else {
             Sram_OpenSave();
         }

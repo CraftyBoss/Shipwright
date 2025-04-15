@@ -7,11 +7,17 @@
 #include <array>
 #include <string>
 #include <vector>
+#include <StringHelper.h>
+
+#include "BattleHallDistanceWindow.h"
+#include "BattleHallDebugWindow.h"
 
 extern "C" {
 #include "functions.h"
 #include "macros.h"
 #include "variables.h"
+#include <soh/ActorDB.h>
+#include <soh/Enhancements/nametag.h>
 extern PlayState* gPlayState;
 }
 
@@ -39,6 +45,10 @@ struct {
           { "Double", "Doppel", "Double" },
       } }
 };
+
+BattleHallData sHallData;
+std::shared_ptr<BattleHallDebugWindow> sDbgWindow;
+std::shared_ptr<BattleHallDistWindow> sDistWindow;
 
 const char* BattleHall_GetSettingName(u8 optionIndex, u8 language) {
     return BattleHallOptions[optionIndex].name[language].c_str();
@@ -103,7 +113,7 @@ void BattleHall_InitSave() {
     }
 
     gSaveContext.ship.quest.id = QUEST_BATTLEHALL;
-    gSaveContext.entranceIndex = ENTR_SASATEST_0;
+    gSaveContext.entranceIndex = ENTR_BATTLE_HALL_0;
     gSaveContext.cutsceneIndex = 0x8000;
 
     // Set magic
@@ -149,6 +159,8 @@ void BattleHall_InitSave() {
 
     if (CheckBHOptionFlag(BH_OPTIONS_HEARTS, BH_CHOICE_HEARTS_OHKO)) {
         CVarSetInteger(CVAR_ENHANCEMENT("DamageMult"), DAMAGE_OHKO);
+    } else {
+        CVarSetInteger(CVAR_ENHANCEMENT("DamageMult"), DAMAGE_VANILLA);
     }
 
     gSaveContext.healthCapacity = health;
@@ -248,6 +260,23 @@ void BattleHallOnVanillaBehaviour(GIVanillaBehavior id, bool* should, va_list or
             }
             break;
         }
+        case VB_CLOSE_PAUSE_MENU: {
+            if (CHECK_BTN_ALL(gPlayState->state.input[0].press.button, BTN_B)) {
+                *should = true;
+            }
+            break;
+        }
+        // Prevent saving
+        case VB_BE_ABLE_TO_SAVE:
+        // Rupees are useless in boss rush
+        case VB_RENDER_RUPEE_COUNTER: {
+            *should = false;
+            break;
+        }
+        // Prevent warning spam
+        default: {
+            break;
+        }
     }
 }
 
@@ -277,20 +306,89 @@ void BattleHallOnGameFrameUpdateHandler() {
     }
 }
 
+void BattleHallOnPlayerUpdate() {
+    Player* player = GET_PLAYER(gPlayState);
+    Camera* camera = GET_ACTIVE_CAM(gPlayState);
+    auto& playerPos = player->actor.world.pos;
+    auto& camPos = camera->eye;
+
+    sHallData.totalRunDist = Math_Vec3f_DistXYZ(&sHallData.curLoopOffset, &playerPos);
+    sDistWindow->SetDistance(sHallData.totalRunDist);
+
+    auto relativeHallPos = Vec3f_();
+    Math_Vec3f_Diff(&playerPos, &sHallData.curLoopOffset, &relativeHallPos);
+
+    float offsetVal = (LOOP_POINT_Z * 2) + 2.0f;
+
+    if (relativeHallPos.z > LOOP_POINT_Z) {
+        Vec3f_ movePos = Vec3f_(playerPos.x, playerPos.y, playerPos.z - offsetVal);
+        BattleHall_WarpPlayer(&movePos);
+    } else if (relativeHallPos.z < -LOOP_POINT_Z) {
+        Vec3f_ movePos = Vec3f_(playerPos.x, playerPos.y, playerPos.z + offsetVal);
+        BattleHall_WarpPlayer(&movePos);
+    }
+}
+
 void BattleHall_RegisterHooks() {
     static u32 onVanillaBehaviorHook = 0;
     static u32 onGameFrameUpdateHook = 0;
+    static u32 onPlayerUpdate = 0;
 
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnLoadGame>([](int32_t fileNum) {
         GameInteractor::Instance->UnregisterGameHook<GameInteractor::OnVanillaBehavior>(onVanillaBehaviorHook);
         GameInteractor::Instance->UnregisterGameHook<GameInteractor::OnGameFrameUpdate>(onGameFrameUpdateHook);
+        GameInteractor::Instance->UnregisterGameHook<GameInteractor::OnGameFrameUpdate>(onPlayerUpdate);
 
         onVanillaBehaviorHook = 0;
         onGameFrameUpdateHook = 0;
+        onPlayerUpdate = 0;
 
         onVanillaBehaviorHook =
             GameInteractor::Instance->RegisterGameHook<GameInteractor::OnVanillaBehavior>(BattleHallOnVanillaBehaviour);
         onGameFrameUpdateHook = GameInteractor::Instance->RegisterGameHook<GameInteractor::OnGameFrameUpdate>(
             BattleHallOnGameFrameUpdateHandler);
+        onPlayerUpdate = GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>(BattleHallOnPlayerUpdate);
     });
+}
+
+void BattleHall_InitSystems() {
+    auto gui = Ship::Context::GetInstance()->GetWindow()->GetGui();
+
+    sDistWindow = std::make_shared<BattleHallDistWindow>(CVAR_WINDOW("BHDistanceWindow"),
+                                                                    "Battle Hall Distance Window", ImVec2(100, 50));
+    gui->AddGuiWindow(sDistWindow);
+
+    sDbgWindow = std::make_shared<BattleHallDebugWindow>(CVAR_WINDOW("BHDebugWindow"), "Battle Hall Debug Window",
+                                                        ImVec2(600, 800));
+
+    sDbgWindow->SetData(&sHallData);
+
+    gui->AddGuiWindow(sDbgWindow);
+}
+
+void BattleHall_WarpPlayer(Vec3f* movePos) {
+    Player* player = GET_PLAYER(gPlayState);
+    Camera* camera = GET_ACTIVE_CAM(gPlayState);
+
+    auto& playerPos = player->actor.world.pos;
+
+    Vec3f relEyePos = Vec3f(camera->eye.x - playerPos.x, camera->eye.y - playerPos.y, camera->eye.z - playerPos.z);
+    Vec3f camEyePos = Vec3f(relEyePos.x + movePos->x, relEyePos.y + movePos->y, relEyePos.z + movePos->z);
+    Vec3f camAtPos =
+        Vec3f(camera->posOffset.x + movePos->x, camera->posOffset.y + movePos->y, camera->posOffset.z + movePos->z);
+
+    Math_Vec3f_Copy(&playerPos, movePos);
+    Play_CameraSetAtEye(gPlayState, gPlayState->activeCamera, &camAtPos, &camEyePos);
+}
+
+Actor* BattleHall_SpawnActorWithName(ActorID id, u32 params, Vec3f* pos, const char* name) {
+    auto actorEntry = ActorDB::Instance->RetrieveEntry(id);
+    if (!actorEntry.entry.valid) {
+        return nullptr;
+    }
+
+    auto* actor = Actor_Spawn(&gPlayState->actorCtx, gPlayState, id, pos->x, pos->y, pos->z, 0, 0, 0,
+                                   params, false);
+    NameTag_RegisterForActor(actor, name);
+    return actor;
 }

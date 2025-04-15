@@ -1071,6 +1071,7 @@ void RegisterCustomSkeletons() {
 void InitMods() {
     BossRush_RegisterHooks();
     BattleHall_RegisterHooks();
+    BattleHall_InitSystems();
     RandomizerRegisterHooks();
     TimeSaverRegisterHooks();
     TimeSavers_Register();

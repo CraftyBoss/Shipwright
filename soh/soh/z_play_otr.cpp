@@ -7,11 +7,15 @@
 #include "global.h"
 #include "vt.h"
 #include <Vertex.h>
+#include "resource/type/scenecommand/SetStartPositionList.h"
+#include "resource/type/scenecommand/SetLightingSettings.h"
+#include "resource/type/scenecommand/SetSkyboxSettings.h"
 
 extern "C" void Play_InitScene(PlayState* play, s32 spawn);
 extern "C" void Play_InitEnvironment(PlayState* play, s16 skyboxId);
 void OTRPlay_InitScene(PlayState* play, s32 spawn);
 s32 OTRScene_ExecuteCommands(PlayState* play, SOH::Scene* scene);
+void OTRPlay_HookCollisionCommand(PlayState* play, s32 sceneId, SOH::Scene* scene);
 
 // LUS::OTRResource* OTRPlay_LoadFile(PlayState* play, RomFile* file) {
 Ship::IResource* OTRPlay_LoadFile(PlayState* play, const char* fileName) {
@@ -54,6 +58,8 @@ extern "C" void OTRPlay_SpawnScene(PlayState* play, s32 sceneId, s32 spawn) {
 
     // gSegments[2] = VIRTUAL_TO_PHYSICAL(play->sceneSegment);
 
+    OTRPlay_HookCollisionCommand(play, sceneId, (SOH::Scene*)play->sceneSegment);
+
     OTRPlay_InitScene(play, spawn);
     auto roomSize = func_80096FE8(play, &play->roomCtx);
 
@@ -88,4 +94,39 @@ void OTRPlay_InitScene(PlayState* play, s32 spawn) {
     auto data2 = ResourceMgr_LoadVtxByCRC(0x68d4ea06044e228f);*/
 
     volatile int a = 0;
+}
+
+void OTRPlay_HookCollisionCommand(PlayState* play, s32 sceneId, SOH::Scene* scene) {
+    if (sceneId == SCENE_BATTLEHALL) {
+        for (auto& cmd : scene->commands) {
+            if (cmd->cmdId == SOH::SceneCommandID::SetStartPositionList) {
+                SOH::SetStartPositionList* cmdActList = (SOH::SetStartPositionList*)cmd.get();
+                auto& playerEntry = cmdActList->startPositions[0];
+
+                playerEntry.pos.x = 0.0f;
+                playerEntry.pos.y = 0.0f;
+                playerEntry.pos.z = 0.0f;
+
+            } else if (cmd->cmdId == SOH::SceneCommandID::SetSkyboxSettings) {
+                SOH::SetSkyboxSettings* cmdSettings = (SOH::SetSkyboxSettings*)cmd.get();
+
+                cmdSettings->settings.indoors = 1; // LightMode::LIGHT_MODE_SETTINGS
+            } else if (cmd->cmdId == SOH::SceneCommandID::SetLightingSettings) {
+                SOH::SetLightingSettings* cmdSettings = (SOH::SetLightingSettings*)cmd.get();
+                SOH::EnvLightSettings lightSetting = {
+                    { 70, 70, 70 },    // Ambient Color
+                    { 73, -73, 73 },   // Diffuse0 Direction
+                    { 35, 35, 35 },    // Diffuse0 Color
+                    { -73, 73, -73 },  // Diffuse1 Direction
+                    { 100, 100, 100 }, // Diffuse1 Color
+                    { 30, 30, 30 },    // Fog Color
+                    ((1 << 10) | 900), // Blend Rate & Fog Near
+                    2500,              // Clipping Plane
+                };
+
+                cmdSettings->settings.clear();
+                cmdSettings->settings.push_back(lightSetting);
+            }
+        }
+    }
 }

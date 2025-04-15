@@ -10,9 +10,9 @@
 namespace SOH {
 typedef struct {
     uint8_t unk;
-    uint8_t skyboxId;
-    uint8_t weather;
-    uint8_t indoors;
+    uint8_t skyboxId; // skyboxId
+    uint8_t weather; // skyboxConfig
+    uint8_t indoors; // envLightMode
 } SkyboxSettings;
 
 class SetSkyboxSettings : public SceneCommand<SkyboxSettings> {

@@ -441,7 +441,12 @@ void EnDekunuts_Die(EnDekunuts* this, PlayState* play) {
         EffectSsHahen_SpawnBurst(play, &effectPos, 3.0f, 0, 12, 3, 15, HAHEN_OBJECT_DEFAULT, 10, NULL);
         Item_DropCollectibleRandom(play, &this->actor, &this->actor.world.pos, 0x30);
         if (this->actor.child != NULL) {
-            Actor_ChangeCategory(play, &play->actorCtx, this->actor.child, ACTORCAT_PROP);
+            // kill flower actor if in battle hall mode
+            if (IS_BATTLE_HALL) {
+                Actor_Kill(this->actor.child);
+            } else {
+                Actor_ChangeCategory(play, &play->actorCtx, this->actor.child, ACTORCAT_PROP);
+            }
         }
         Actor_Kill(&this->actor);
     }

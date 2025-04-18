@@ -1,10 +1,13 @@
 #include "z_bg_mizu_shutter.h"
 #include "objects/object_mizu_objects/object_mizu_objects.h"
 
+// in a more ideal world, instead of modifying the functionality of this actor, it would be nice to create a new actor instead.
+
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
 #define SIZE_PARAM (((u16)this->dyna.actor.params >> 0xC) & 0xF)
 #define TIMER_PARAM (((u16)this->dyna.actor.params >> 6) & 0x3F)
+#define SWITCH_PARAM ((u16)this->dyna.actor.params & 0x3F)
 
 void BgMizuShutter_Init(BgMizuShutter* this, PlayState* play);
 void BgMizuShutter_Destroy(BgMizuShutter* this, PlayState* play);
@@ -38,7 +41,7 @@ static CollisionHeader* sCollisionHeaders[] = {
 
 static Vec3f sDisplacements[] = {
     { 0.0f, 100.0f, 0.0f },
-    { 0.0f, 140.0f, 0.0f },
+    { 0.0f, -160.0f, 0.0f },
 };
 
 static InitChainEntry sInitChain[] = {
@@ -72,10 +75,10 @@ void BgMizuShutter_Init(BgMizuShutter* thisx, PlayState* play) {
         this->openPos.y += this->dyna.actor.world.pos.y;
         this->openPos.z += this->dyna.actor.world.pos.z;
         if (this->timerMax != 0x3F * 20) {
-            Flags_UnsetSwitch(play, (u16)this->dyna.actor.params & 0x3F);
+            Flags_UnsetSwitch(play, SWITCH_PARAM);
             this->dyna.actor.world.pos = this->closedPos;
         }
-        if (Flags_GetSwitch(play, (u16)this->dyna.actor.params & 0x3F)) {
+        if (Flags_GetSwitch(play, SWITCH_PARAM)) {
             this->dyna.actor.world.pos = this->openPos;
             this->actionFunc = BgMizuShutter_WaitForTimer;
         } else {
@@ -141,7 +144,12 @@ void BgMizuShutter_WaitForTimer(BgMizuShutter* this, PlayState* play) {
         func_8002F994(&this->dyna.actor, this->timer);
         if (this->timer == 0) {
             Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_METALDOOR_CLOSE);
-            Flags_UnsetSwitch(play, (u16)this->dyna.actor.params & 0x3F);
+            Flags_UnsetSwitch(play, SWITCH_PARAM);
+            this->actionFunc = BgMizuShutter_Move;
+        }
+    } else if(IS_BATTLE_HALL) { // if in battle hall mode, close the metal door when the stage switch has been unset.
+        if (!Flags_GetSwitch(play, SWITCH_PARAM)) {
+            Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_METALDOOR_CLOSE);
             this->actionFunc = BgMizuShutter_Move;
         }
     }

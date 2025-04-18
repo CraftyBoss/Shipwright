@@ -306,7 +306,7 @@ void func_80A747C0(EnIk* this, PlayState* play) {
         this->skelAnime.playSpeed = 1.0f;
         // Disable miniboss music with Enemy Randomizer because the music would keep
         // playing if the enemy was never defeated, which is common with Enemy Randomizer.
-        if (!CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0)) {
+        if (!CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0) && !IS_BATTLE_HALL) {
             func_800F5ACC(NA_BGM_MINI_BOSS);
         }
     }
@@ -1462,7 +1462,7 @@ void EnIk_Init(Actor* thisx, PlayState* play) {
 
     // Immediately trigger Iron Knuckle for Enemy Rando and Crowd Control
     if ((CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0) ||
-         (CVarGetInteger(CVAR_REMOTE_CROWD_CONTROL("Enabled"), 0))) &&
+         (CVarGetInteger(CVAR_REMOTE_CROWD_CONTROL("Enabled"), 0)) || IS_BATTLE_HALL) &&
         (thisx->params == 2 || thisx->params == 3)) {
         this->skelAnime.playSpeed = 1.0f;
     }

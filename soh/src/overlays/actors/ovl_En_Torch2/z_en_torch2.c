@@ -7,6 +7,7 @@
 #include "z_en_torch2.h"
 #include "objects/object_torch2/object_torch2.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
+#include "soh/Mods/BattleHall/battle-hall.h"
 
 #define FLAGS                                                                                 \
     (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
@@ -130,7 +131,7 @@ void EnTorch2_Init(Actor* thisx, PlayState* play2) {
 
     // Change Dark Link to regular enemy instead of boss with enemy randomizer and crowd control.
     // This way Dark Link will be considered for "clear enemy" rooms properly.
-    if (CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0) ||
+    if (CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0) || IS_BATTLE_HALL ||
         (CVarGetInteger(CVAR_REMOTE_CROWD_CONTROL("Enabled"), 0))) {
         Actor_ChangeCategory(play, &play->actorCtx, thisx, ACTORCAT_ENEMY);
     }
@@ -281,7 +282,7 @@ void EnTorch2_Update(Actor* thisx, PlayState* play2) {
                 }
                 // Disable miniboss music with Enemy Randomizer because the music would keep
                 // playing if the enemy was never defeated, which is common with Enemy Randomizer.
-                if (!CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0)) {
+                if (!CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0) && !IS_BATTLE_HALL) {
                     func_800F5ACC(NA_BGM_MINI_BOSS);
                 }
                 sActionState = ENTORCH2_ATTACK;
@@ -534,22 +535,34 @@ void EnTorch2_Update(Actor* thisx, PlayState* play2) {
                 this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
                 this->invincibilityTimer = 0;
                 this->actor.velocity.y = 0.0f;
-                this->actor.world.pos.y = sSpawnPoint.y + 40.0f;
-                this->actor.world.pos.x = (Math_SinS(player->actor.shape.rot.y) * -120.0f) + player->actor.world.pos.x;
-                this->actor.world.pos.z = (Math_CosS(player->actor.shape.rot.y) * -120.0f) + player->actor.world.pos.z;
-                if (Actor_WorldDistXYZToPoint(&this->actor, &sSpawnPoint) > 800.0f) {
-                    sp50 = Rand_ZeroOne() * 20.0f;
-                    sp4E = Rand_CenteredFloat(4000.0f);
-                    this->actor.shape.rot.y = this->actor.world.rot.y =
-                        Math_Vec3f_Yaw(&sSpawnPoint, &player->actor.world.pos);
-                    this->actor.world.pos.x =
-                        (Math_SinS(this->actor.world.rot.y + sp4E) * (25.0f + sp50)) + sSpawnPoint.x;
-                    this->actor.world.pos.z =
-                        (Math_CosS(this->actor.world.rot.y + sp4E) * (25.0f + sp50)) + sSpawnPoint.z;
-                    this->actor.world.pos.y = sSpawnPoint.y;
-                } else {
+                
+                // choose a new spot in the battle hall to re-appear at, instead of based on players facing direction (can cause dark link to spawn out of bounds)
+                if (IS_BATTLE_HALL) {
+                    BattleHall_Vec3f_SetRandom(&this->actor.world.pos);
+
                     this->actor.world.pos.y = this->actor.floorHeight;
+                } else {
+                    this->actor.world.pos.y = sSpawnPoint.y + 40.0f;
+                    this->actor.world.pos.x =
+                        (Math_SinS(player->actor.shape.rot.y) * -120.0f) + player->actor.world.pos.x;
+                    this->actor.world.pos.z =
+                        (Math_CosS(player->actor.shape.rot.y) * -120.0f) + player->actor.world.pos.z;
+
+                    if (Actor_WorldDistXYZToPoint(&this->actor, &sSpawnPoint) > 800.0f) {
+                        sp50 = Rand_ZeroOne() * 20.0f;
+                        sp4E = Rand_CenteredFloat(4000.0f);
+                        this->actor.shape.rot.y = this->actor.world.rot.y =
+                            Math_Vec3f_Yaw(&sSpawnPoint, &player->actor.world.pos);
+                        this->actor.world.pos.x =
+                            (Math_SinS(this->actor.world.rot.y + sp4E) * (25.0f + sp50)) + sSpawnPoint.x;
+                        this->actor.world.pos.z =
+                            (Math_CosS(this->actor.world.rot.y + sp4E) * (25.0f + sp50)) + sSpawnPoint.z;
+                        this->actor.world.pos.y = sSpawnPoint.y;
+                    } else {
+                        this->actor.world.pos.y = this->actor.floorHeight;
+                    }
                 }
+
                 Math_Vec3f_Copy(&this->actor.home.pos, &this->actor.world.pos);
                 play->func_11D54(this, play);
                 sActionState = ENTORCH2_ATTACK;

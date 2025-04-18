@@ -334,10 +334,10 @@ void EnItem00_SetupAction(EnItem00* this, EnItem00ActionFunc actionFunc) {
 }
 
 void EnItem00_SetObjectDependency(EnItem00* this, PlayState* play, s16 objectIndex) {
-    // Remove object dependency for Enemy Randomizer and Crowd Control to allow Like-likes to
+    // Remove object dependency for Enemy Randomizer, Crowd Control, and Battle Hall to allow Like-likes to
     // drop equipment correctly in rooms where Like-likes normally don't spawn.
     if (CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0) ||
-        (CVarGetInteger(CVAR_REMOTE_CROWD_CONTROL("Enabled"), 0))) {
+        (CVarGetInteger(CVAR_REMOTE_CROWD_CONTROL("Enabled"), 0)) || IS_BATTLE_HALL) {
         this->actor.objBankIndex = 0;
     } else {
         this->actor.objBankIndex = Object_GetIndex(&play->objectCtx, objectIndex);

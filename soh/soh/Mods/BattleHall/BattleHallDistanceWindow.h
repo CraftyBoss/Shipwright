@@ -2,10 +2,11 @@
 
 #include <string>
 #include <libultraship/libultraship.h>
+#include "battle-hall.h"
 
 class BattleHallDistWindow : public Ship::GuiWindow {
   private:
-    int mCurDist = 0;
+    BattleHallData* mHallData = nullptr;
   public:
     using GuiWindow::GuiWindow;
 
@@ -14,8 +15,8 @@ class BattleHallDistWindow : public Ship::GuiWindow {
     void Draw() override;
     void UpdateElement() override;
 
-    inline void SetDistance(int dist) {
-        mCurDist = dist;
+    inline void SetHallData(BattleHallData* data) {
+        mHallData = data;
     }
 };
 

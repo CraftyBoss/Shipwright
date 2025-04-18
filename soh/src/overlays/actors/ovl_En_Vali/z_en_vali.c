@@ -248,7 +248,7 @@ void EnVali_SetupDivideAndDie(EnVali* this, PlayState* play) {
 
         // Offset small jellyfish with Enemy Randomizer, otherwise it gets
         // stuck in a loop spawning more big jellyfish with seeded spawns.
-        if (CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0)) {
+        if (CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemies"), 0) || IS_BATTLE_HALL) {
             this->actor.world.rot.y += rand() % 50;
         }
 

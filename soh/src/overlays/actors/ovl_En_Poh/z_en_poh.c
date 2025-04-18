@@ -243,7 +243,7 @@ void EnPoh_Init(Actor* thisx, PlayState* play) {
         this->actor.naviEnemyId = 0x43;
     }
     this->info = &sPoeInfo[this->infoIdx];
-    if (this->objectIdx < 0) {
+    if (this->objectIdx < 0 && !IS_BATTLE_HALL) {
         Actor_Kill(&this->actor);
     }
 }
@@ -412,7 +412,12 @@ void func_80ADE6D4(EnPoh* this) {
     this->actor.shape.rot.x = 0;
     this->actor.home.pos.y = this->actor.world.pos.y;
     Audio_PlayActorSound2(&this->actor, NA_SE_EV_METAL_BOX_BOUND);
-    this->actionFunc = func_80ADFE28;
+
+     if (IS_BATTLE_HALL) { 
+        Actor_Kill(&this->actor); // skip rendering poe soul
+    } else {
+        this->actionFunc = func_80ADFE28;
+    }
 }
 
 void EnPoh_Talk(EnPoh* this, PlayState* play) {
@@ -722,7 +727,7 @@ void EnPoh_Death(EnPoh* this, PlayState* play) {
     s32 objId;
 
     if (this->unk_198 != 0) {
-        this->unk_198--;
+         this->unk_198--;
     }
     if (this->actor.bgCheckFlags & 1) {
         objId = (this->infoIdx == EN_POH_INFO_COMPOSER) ? OBJECT_PO_COMPOSER : OBJECT_POH;
@@ -913,10 +918,13 @@ void EnPoh_UpdateVisibility(EnPoh* this) {
 void EnPoh_Update(Actor* thisx, PlayState* play) {
     EnPoh* this = (EnPoh*)thisx;
 
-    if (Object_IsLoaded(&play->objectCtx, this->objectIdx)) {
-        this->actor.objBankIndex = this->objectIdx;
+    if (Object_IsLoaded(&play->objectCtx, this->objectIdx) || IS_BATTLE_HALL) {
+        if (!IS_BATTLE_HALL) {
+            this->actor.objBankIndex = this->objectIdx;
+            Actor_SetObjectDependency(play, &this->actor);
+        }
         this->actor.update = EnPoh_UpdateLiving;
-        Actor_SetObjectDependency(play, &this->actor);
+        
         if (this->infoIdx == EN_POH_INFO_NORMAL) {
             SkelAnime_Init(play, &this->skelAnime, &gPoeSkel, &gPoeFloatAnim, this->jointTable, this->morphTable, 21);
             this->actor.draw = EnPoh_DrawRegular;

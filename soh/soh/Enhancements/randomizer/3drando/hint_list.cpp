@@ -2358,8 +2358,6 @@ void StaticData::HintTable_Init() {
                                                               {QM_YELLOW, QM_GREEN}));
 
     hintTextTable[RHT_BIGGORON_HINT] = HintText(CustomMessage("Arrrrrre you here to claim my finest #[[1]]#? Shoooooow me your #Claim Check#.",
-                                                   /*german*/ "Arrrrr, bist du hier, um mein feinsten #[[1]]# zu beanspruchen? Zeig mir deinen #Zertifikat#!"
-                                                   /*french*/ "Eeeeeees-tu ici pour réclaaaaaamer mon plus beau #[[1]]#? Moooooontre-moi ton #Certificat#.",
                                                               {QM_GREEN, QM_RED}));
 
     hintTextTable[RHT_FROGS_HINT] = HintText(CustomMessage("Some frogs holding #[[1]]# are looking at you from underwater...",

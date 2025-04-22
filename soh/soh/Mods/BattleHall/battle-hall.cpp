@@ -50,10 +50,15 @@ struct {
       } },
     { { "MAGIC:", "MAGIE:", "MAGIE:" },
       {
-          { "None", "None", "None" },
+          { "Infinite", "Infinite", "Infinite" },
           { "Single", "Einzel", "Simple" },
           { "Double", "Doppel", "Double" },
-      } }
+      } },
+    { { "HERO MODE:", "HERO MODE:", "HERO MODE:" },
+    {
+        { "On", "On", "On" },
+        { "Off", "Off", "Off" },
+    } }
 };
 
 const char* testPlayerNames[] = { "CraftyBoss", "xGeoff",       "Eri",   "Fenix",   "Kasai",
@@ -228,7 +233,7 @@ void BattleHall_SetEquipment(u8 linkAge) {
 
         Inventory_ChangeEquipment(EQUIP_TYPE_SWORD, EQUIP_VALUE_SWORD_MASTER);
         Inventory_ChangeEquipment(EQUIP_TYPE_SHIELD, EQUIP_VALUE_SHIELD_MIRROR);
-        Inventory_ChangeEquipment(EQUIP_TYPE_TUNIC, EQUIP_VALUE_TUNIC_GORON);
+        Inventory_ChangeEquipment(EQUIP_TYPE_TUNIC, EQUIP_VALUE_TUNIC_KOKIRI);
     }
 
     // Button Items
@@ -243,11 +248,15 @@ void BattleHall_SetEquipment(u8 linkAge) {
 }
 
 void BattleHall_InitSave() {
-
     // Set player name to Lonk for the few textboxes that show up during Boss Rush. Player can't input their own name.
     std::array<char, 8> brPlayerName = { 21, 50, 49, 46, 62, 62, 62, 62 };
     for (int i = 0; i < ARRAY_COUNT(gSaveContext.playerName); i++) {
         gSaveContext.playerName[i] = brPlayerName[i];
+    }
+
+     // Sets all rando flags to false (we use the infinite item flags for this gamemode)
+    for (s32 i = 0; i < ARRAY_COUNT(gSaveContext.ship.randomizerInf); i++) {
+        gSaveContext.ship.randomizerInf[i] = 0;
     }
 
     gSaveContext.ship.quest.id = QUEST_BATTLEHALL;
@@ -255,7 +264,15 @@ void BattleHall_InitSave() {
     gSaveContext.cutsceneIndex = 0x8000;
 
     // Set magic
-    if (!CheckBHOptionFlag(BH_OPTIONS_MAGIC, BH_CHOICE_MAGIC_NONE)) {
+    if (CheckBHOptionFlag(BH_OPTIONS_MAGIC, BH_CHOICE_MAGIC_INF)) {
+        // infinite magic shows blue in the UI
+        gSaveContext.isMagicAcquired = 1;
+        gSaveContext.isDoubleMagicAcquired = 1;
+        gSaveContext.magicLevel = 2;
+        gSaveContext.magic = 96;
+
+        Flags_SetRandomizerInf(RAND_INF_HAS_INFINITE_MAGIC_METER);
+    } else {
         gSaveContext.isMagicAcquired = 1;
 
         if (CheckBHOptionFlag(BH_OPTIONS_MAGIC, BR_CHOICE_MAGIC_SINGLE)) {
@@ -266,8 +283,6 @@ void BattleHall_InitSave() {
             gSaveContext.magicLevel = 2;
             gSaveContext.magic = 96;
         }
-    } else {
-        gSaveContext.isMagicAcquired = 0;
     }
 
     // Set health
@@ -301,6 +316,9 @@ void BattleHall_InitSave() {
         CVarSetInteger(CVAR_ENHANCEMENT("DamageMult"), DAMAGE_VANILLA);
     }
 
+    // hero mode
+    CVarSetInteger(CVAR_ENHANCEMENT("NoHeartDrops"), CheckBHOptionFlag(BH_OPTIONS_HERO, BH_CHOICE_HERO_ON));
+
     gSaveContext.healthCapacity = health;
     gSaveContext.health = health;
 
@@ -313,11 +331,6 @@ void BattleHall_InitSave() {
     gSaveContext.eventChkInf[7] |= 0x20; // twinrova
     gSaveContext.eventChkInf[7] |= 0x40; // barinade
     gSaveContext.eventChkInf[7] |= 0x80; // bongo bongo
-
-    // Sets all rando flags to false (we use the infinite item flags for this gamemode)
-    for (s32 i = 0; i < ARRAY_COUNT(gSaveContext.ship.randomizerInf); i++) {
-        gSaveContext.ship.randomizerInf[i] = 0;
-    }
 
     // set infinite items
     Flags_SetRandomizerInf(RAND_INF_HAS_INFINITE_BOMBCHUS);
@@ -393,16 +406,17 @@ void BattleHall_HandleActorSpawn() {
             BattleHall_SpawnActorWithName(entry.type, entry.name.c_str());
         }
 
+        Flags_UnsetSwitch(gPlayState, FLAG_OPEN_GATE);
+
         sHallData.actorQueue.clear();
         sHallData.isSpawningActors = false;
-    }
-
-    if (!sHallData.isSpawnActorsInQueue && sHallData.curAliveActors.empty()) {
-        Flags_SetSwitch(gPlayState, FLAG_OPEN_GATE);
     }
 }
 
 void BattleHallOnVanillaBehaviour(GIVanillaBehavior id, bool* should, va_list originalArgs) {
+    if (gPlayState->sceneNum != SCENE_BATTLEHALL)
+        return;
+
     va_list args;
     va_copy(args, originalArgs);
 
@@ -469,9 +483,16 @@ void BattleHallOnGameFrameUpdateHandler() {
     if (Flags_GetRandomizerInf(RAND_INF_HAS_INFINITE_BOMBCHUS)) {
         AMMO(ITEM_BOMBCHU) = 50;
     }
+
+    if (Flags_GetRandomizerInf(RAND_INF_HAS_INFINITE_MAGIC_METER)) {
+        gSaveContext.magic = gSaveContext.magicCapacity;
+    }
 }
 
 void BattleHallOnPlayerUpdate() {
+    if (gPlayState->sceneNum != SCENE_BATTLEHALL)
+        return;
+
     Player* player = GET_PLAYER(gPlayState);
     Camera* camera = GET_ACTIVE_CAM(gPlayState);
     auto& playerPos = player->actor.world.pos;
@@ -490,7 +511,6 @@ void BattleHallOnPlayerUpdate() {
         sHallData.isSpawnActorsInQueue = true;
 
         BattleHall_WarpPlayer(&movePos);
-        Flags_UnsetSwitch(gPlayState, FLAG_OPEN_GATE);
     } else if (playerPos.z < -LOOP_POINT_Z) {
         sHallData.isPushPlayer = true;
         player->pushedSpeed = 6.0f;
@@ -508,6 +528,9 @@ void BattleHallOnSceneInit(u16 sceneNum) {
     sHallData.curAliveActors.clear();
     sHallData.actorQueue.clear();
 
+    // set gate as open initially
+    Flags_SetSwitch(gPlayState, FLAG_OPEN_GATE);
+
     //BattleHall_QueueAllAvailableActors();
 }
 
@@ -523,6 +546,10 @@ void BattleHallOnActorKillHook(void* actorPtr) {
     auto actorIter = std::find(sHallData.curAliveActors.begin(), sHallData.curAliveActors.end(), actor);
     if (actorIter != sHallData.curAliveActors.end()) {
         sHallData.curAliveActors.erase(actorIter);
+
+        if (sHallData.curAliveActors.empty()) {
+            Flags_SetSwitch(gPlayState, FLAG_OPEN_GATE);
+        }
     }
 }
 

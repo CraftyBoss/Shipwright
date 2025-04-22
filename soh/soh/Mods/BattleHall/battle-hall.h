@@ -5,6 +5,7 @@
 typedef enum {
     BH_OPTIONS_HEARTS,
     BH_OPTIONS_MAGIC,
+    BH_OPTIONS_HERO,
     BH_OPTIONS_MAX,
 } BattleHallOptionEnums;
 
@@ -19,10 +20,15 @@ typedef enum {
 } BattleHallHeartsChoices;
 
 typedef enum {
-    BH_CHOICE_MAGIC_NONE,
+    BH_CHOICE_MAGIC_INF,
     BH_CHOICE_MAGIC_SINGLE,
     BH_CHOICE_MAGIC_DOUBLE,
 } BattleHallMagicChoices;
+
+typedef enum {
+    BH_CHOICE_HERO_ON,
+    BH_CHOICE_HERO_OFF,
+} BattleHallHeroModeChoices;
 
 typedef enum {
     BH_ACTOR_DEKUBABA,

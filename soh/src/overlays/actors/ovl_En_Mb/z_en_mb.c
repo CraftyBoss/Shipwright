@@ -303,10 +303,15 @@ void EnMb_Init(Actor* thisx, PlayState* play) {
 
             relYawFromPlayer =
                 this->actor.world.rot.y - Math_Vec3f_Yaw(&this->actor.world.pos, &player->actor.world.pos);
+
             if (ABS(relYawFromPlayer) > 0x4000) {
                 this->actor.world.rot.y = thisx->world.rot.y + 0x8000;
                 this->actor.shape.rot.y = thisx->world.rot.y;
-                this->actor.world.pos.z = thisx->world.pos.z + 600.0f;
+                if (!IS_BATTLE_HALL) {
+                    // this bit of code moves where the moblin spawns depending on where the player is, which we dont
+                    // want for battle hall.
+                    this->actor.world.pos.z = thisx->world.pos.z + 600.0f;
+                }
             }
 
             ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, 90.0f);

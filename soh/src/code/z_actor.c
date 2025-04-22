@@ -13,6 +13,7 @@
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 #include "soh/Enhancements/nametag.h"
+#include "soh/Mods/BattleHall/battle-hall.h"
 
 #include "soh/ActorDB.h"
 #include "soh/OTRGlobals.h"
@@ -3418,6 +3419,8 @@ Actor* Actor_SpawnAsChild(ActorContext* actorCtx, Actor* parent, PlayState* play
     if (spawnedActor->room >= 0) {
         spawnedActor->room = parent->room;
     }
+
+    BattleHall_OnChildActorSpawn(spawnedActor, parent);
 
     return spawnedActor;
 }

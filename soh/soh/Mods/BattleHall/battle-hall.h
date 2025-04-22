@@ -48,6 +48,7 @@ typedef enum {
     BH_ACTOR_FIREKEESE,
     BH_ACTOR_TEKTITE,
     BH_ACTOR_BABYDODONGO,
+    BH_ACTOR_ANUBIS,
     BH_ACTOR_TORCHSLUG,
     BH_ACTOR_WOLFOS,
     BH_ACTOR_BIGDEKUBABA,
@@ -80,7 +81,7 @@ typedef enum {
 typedef enum {
     BH_ACTORS_VERY_EASY = BH_ACTOR_DEKUBABA,
     BH_ACTORS_EASY = BH_ACTOR_SKULLKID,
-    BH_ACTORS_MEDIUM = BH_ACTOR_TORCHSLUG,
+    BH_ACTORS_MEDIUM = BH_ACTOR_ANUBIS,
     BH_ACTORS_HARD = BH_ACTOR_WHITEBUBBLE,
     BH_ACTORS_VERY_HARD = BH_ACTOR_IRONKNUCKLE,
     BH_ACTORS_MAX = BH_ACTOR_MAX,
@@ -134,6 +135,8 @@ extern "C" {
 void BattleHall_InitSave();
 void BattleHall_RegisterHooks();
 void BattleHall_InitSystems();
+
+void BattleHall_OnChildActorSpawn(Actor* actor, Actor* parent);
 
 const char* BattleHall_GetSettingName(u8 optionIndex, u8 language);
 const char* BattleHall_GetSettingChoiceName(u8 optionIndex, u8 choiceIndex, u8 language);

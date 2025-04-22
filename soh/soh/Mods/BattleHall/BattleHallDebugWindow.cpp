@@ -13,12 +13,12 @@ extern PlayState* gPlayState;
 }
 
 const char* actorNames[] = {
-    "DekuBaba",     "Keese",       "MadScrub",    "GohmaLarva",  "Stalchild",  "Stinger",     "Shabom",    "SkullKid",
-    "BigSkulltula", "Armos",       "Beamos",      "Spike",       "Bari",       "TailPasaran", "FireKeese", "Tektite",
-    "BabyDodongo",  "TorchSlug",   "Wolfos",      "BigDekuBaba", "ClubMoblin", "GreenBubble", "RedBubble", "BlueBubble",
-    "Poe",          "Guay",        "IceKeese",    "ReDead",      "ShellBlade", "WhiteWolfos", "Leever",    "Dodongo",
-    "Lizalfos",     "WhiteBubble", "Floormaster", "Gibdo",       "Peahat",     "Dinolfos",    "Sharp",     "Freezard",
-    "Stalfos",      "IronKnuckle", "DarkLink",
+    "DekuBaba",     "Keese",    "MadScrub",    "GohmaLarva",  "Stalchild",   "Stinger",     "Shabom",      "SkullKid",
+    "BigSkulltula", "Armos",    "Beamos",      "Spike",       "Bari",        "TailPasaran", "FireKeese",   "Tektite",
+    "BabyDodongo",  "Anubis",   "TorchSlug",   "Wolfos",      "BigDekuBaba", "ClubMoblin",  "GreenBubble", "RedBubble",
+    "BlueBubble",   "Poe",      "Guay",        "IceKeese",    "ReDead",      "ShellBlade",  "WhiteWolfos", "Leever",
+    "Dodongo",      "Lizalfos", "WhiteBubble", "Floormaster", "Gibdo",       "Peahat",      "Dinolfos",    "Sharp",
+    "Freezard",     "Stalfos",  "IronKnuckle", "DarkLink",
 };
 
 void drawSpawnList(const char* name, BattleHallActorTypes start, BattleHallActorTypes end) {

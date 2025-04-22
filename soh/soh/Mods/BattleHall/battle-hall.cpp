@@ -7,6 +7,7 @@
 #include <array>
 #include <string>
 #include <vector>
+#include <map>
 #include <StringHelper.h>
 
 #include "BattleHallDistanceWindow.h"
@@ -64,6 +65,8 @@ struct {
 const char* testPlayerNames[] = { "CraftyBoss", "xGeoff",       "Eri",   "Fenix",   "Kasai",
                                   "Duprific",   "SuperMCGamer", "jyggy", "Smallant" };
 
+std::map<Actor*, std::string> sActorNameBuffer;
+
 auto hallActorsVeryEasy = std::to_array<HallActorData>({
     { ACTOR_EN_DEKUBABA, 0.0f, 0x0 },        // Deku Baba (controls size)
     { ACTOR_EN_FIREFLY, 80.0f, 0x2 },        // Keese (determines type, visibility, and something else)
@@ -88,7 +91,7 @@ auto hallActorsEasy = std::to_array<HallActorData>({
 });
 
 auto hallActorsMedium = std::to_array<HallActorData>({
-    //{ ACTOR_EN_ANUBICE, 0.0f, 0x0 }, // Anubis (how to kill???)
+    { ACTOR_EN_ANUBICE_TAG, 0.0f, 0x2 }, // Anubis (how to kill???)
     { ACTOR_EN_BW, 0.0f, 0x0 },        // Torch Slug
     { ACTOR_EN_WF, 0.0f, 0x0 },        // Wolfos
     //{ ACTOR_EN_DH, 0.0f, 0x0 },      // Dead Hand
@@ -642,6 +645,16 @@ void BattleHall_PushPlayer(float zSpeed) {
     player->actor.velocity.z += zSpeed;
 }
 
+void BattleHall_OnChildActorSpawn(Actor* actor, Actor* parent) {
+    if (gPlayState->sceneNum != SCENE_BATTLEHALL)
+        return;
+
+    if (sActorNameBuffer.contains(parent)) {
+        NameTag_RegisterForActor(actor, sActorNameBuffer[parent].c_str());
+        sActorNameBuffer.erase(parent);
+    }
+}
+
 Actor* BattleHall_SpawnActorWithName(BattleHallValidActors type, const char* name) {
     auto& actorEntry = hallActorsAll[type];
     
@@ -665,7 +678,12 @@ Actor* BattleHall_SpawnActorWithName(BattleHallValidActors type, const char* nam
         return nullptr;
     }
 
-    NameTag_RegisterForActor(actor, name);
+    if (type == BH_ACTOR_ANUBIS) {
+        // add actor to name buffer to use later
+        sActorNameBuffer[actor] = name;
+    } else {
+        NameTag_RegisterForActor(actor, name);
+    }
 
     sHallData.curAliveActors.push_back(actor);
 

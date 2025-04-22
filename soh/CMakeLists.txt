@@ -5,6 +5,9 @@ set(CMAKE_SYSTEM_VERSION 10.0 CACHE STRING "" FORCE)
 project(soh LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20 CACHE STRING "The C++ standard to use")
 
+set(BUILD_REMOTE_CONTROL 1)
+set(SPDLOG_ACTIVE_LEVEL 1) # set log level to debug
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     enable_language(OBJCXX)
     set(CMAKE_OBJC_FLAGS "${CMAKE_OBJC_FLAGS} -fobjc-arc")
@@ -365,7 +368,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 				"NDEBUG"
 			">"
             "$<$<BOOL:${BUILD_REMOTE_CONTROL}>:ENABLE_REMOTE_CONTROL>"
-			"INCLUDE_GAME_PRINTF;"
             "F3DEX_GBI_2"
 			"UNICODE;"
 			"_UNICODE"
@@ -384,7 +386,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 			"$<$<CONFIG:Release>:"
 				"NDEBUG;"
 			">"
-			"INCLUDE_GAME_PRINTF;"
             "F3DEX_GBI_2"
 			"WIN32;"
 			"UNICODE;"

@@ -336,6 +336,10 @@ GameInteractionEffectBase* Sail::EffectFromJson(nlohmann::json payload) {
             effect->parameters[1] = payload["parameters"][1].get<int32_t>();
         }
         return effect;
+    } else if (name == "BHQueueEnemy") {
+        auto effect = new GameInteractionEffect::BHQueueEnemy();
+        effect->SetParams(payload["parameters"][1], payload["parameters"][0].get<int16_t>());
+        return effect;
     } else {
         SPDLOG_INFO("[Sail] Unknown effect name: {}", name);
         return nullptr;

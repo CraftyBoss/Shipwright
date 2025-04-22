@@ -6,6 +6,9 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
+
+#include <string>
+
 enum GameInteractionEffectQueryResult { Possible = 0x00, TemporarilyNotPossible = 0x01, NotPossible = 0xFF };
 
 class GameInteractionEffectBase {
@@ -268,6 +271,22 @@ class SpawnActor : public GameInteractionEffectBase, public ParameterizedGameInt
     GameInteractionEffectQueryResult CanBeApplied() override;
     void _Apply() override;
 };
+
+// BattleHall Effects
+class BHQueueEnemy : public GameInteractionEffectBase {
+  private:
+    std::string enemyName;
+    int16_t enemyType;
+  public:
+    GameInteractionEffectQueryResult CanBeApplied() override;
+    void _Apply() override;
+
+    void SetParams(const std::string& name, int16_t type) {
+        enemyName = name;
+        enemyType = type;
+    }
+};
+
 } // namespace GameInteractionEffect
 
 #endif /* __cplusplus */

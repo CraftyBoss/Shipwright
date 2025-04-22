@@ -48,8 +48,8 @@ bool GameInteractor::IsSaveLoaded(bool allowDbgSave) {
         return false;
     }
 
-    // Valid save file or debug save
-    return (gSaveContext.fileNum >= 0 && gSaveContext.fileNum <= 2) || (allowDbgSave && gSaveContext.fileNum == 0xFF);
+    // Valid save file, debug save, or Battle Hall Save
+    return (gSaveContext.fileNum >= 0 && gSaveContext.fileNum <= 2) || (allowDbgSave && gSaveContext.fileNum == 0xFF) || IS_BATTLE_HALL;
 }
 
 bool GameInteractor::IsGameplayPaused() {

@@ -11,6 +11,7 @@ have functions to both enable and disable said effect.
 #include "GameInteractionEffect.h"
 #include "GameInteractor.h"
 #include <libultraship/bridge.h>
+#include "soh/Mods/BattleHall/battle-hall.h"
 
 extern "C" {
 #include <z64.h>
@@ -660,4 +661,17 @@ GameInteractionEffectQueryResult SpawnActor::CanBeApplied() {
 void SpawnActor::_Apply() {
     GameInteractor::RawAction::SpawnActor(parameters[0], parameters[1]);
 }
+
+// MARK: - BHQueueEnemy
+GameInteractionEffectQueryResult BHQueueEnemy::CanBeApplied() {
+    if (IS_BATTLE_HALL) {
+        return GameInteractionEffectQueryResult::Possible;
+    }
+    return GameInteractionEffectQueryResult::TemporarilyNotPossible;
+}
+
+void BHQueueEnemy::_Apply() {
+    BattleHall_RegisterActor((BattleHallValidActors)enemyType, enemyName.c_str());
+}
+
 } // namespace GameInteractionEffect

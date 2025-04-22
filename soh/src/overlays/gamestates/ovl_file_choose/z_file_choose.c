@@ -2582,8 +2582,7 @@ void FileChoose_DrawWindowContents(GameState* thisx) {
                 FileChoose_DrawImageRGBA32(
                     this->state.gfxCtx, 160, 135,
                     ResourceMgr_GameHasOriginal() ? gTitleZeldaShieldLogoTex : gTitleZeldaShieldLogoMQTex, 160, 160);
-                FileChoose_DrawImageRGBA32(this->state.gfxCtx, 182, 180, gTitleBossRushSubtitleTex, 128, 32);
-                FileChoose_DrawImageRGBA32(this->state.gfxCtx, 182, 200, gTitleRandomizerSubtitleTex, 128, 32);
+                FileChoose_DrawImageRGBA32(this->state.gfxCtx, 182, 180, "__OTR__./gTitleBattleHallSubtitleTex.rgba32", 128, 32);
                 break;
         }
     } else if (this->configMode == CM_BOSS_RUSH_MENU) {

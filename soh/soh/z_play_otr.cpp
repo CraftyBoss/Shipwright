@@ -15,6 +15,7 @@
 #include "resource/type/scenecommand/SetObjectList.h"
 #include "resource/type/scenecommand/SetPathways.h"
 #include "resource/type/scenecommand/SetSoundSettings.h"
+#include "Mods/BattleHall/battle-hall.h"
 
 extern "C" void Play_InitScene(PlayState* play, s32 spawn);
 extern "C" void Play_InitEnvironment(PlayState* play, s16 skyboxId);
@@ -114,7 +115,7 @@ void OTRPlay_HookSceneCommands(PlayState* play, s32 sceneId, SOH::Scene* scene) 
 
             playerEntry.pos.x = 0.0f;
             playerEntry.pos.y = 0.0f;
-            playerEntry.pos.z = 0.0f;
+            playerEntry.pos.z = -LOOP_POINT_Z;
 
         } else if (cmd->cmdId == SOH::SceneCommandID::SetSkyboxSettings) {
             SOH::SetSkyboxSettings* cmdSettings = (SOH::SetSkyboxSettings*)cmd.get();

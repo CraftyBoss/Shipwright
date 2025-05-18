@@ -7,7 +7,9 @@
 #include <array>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <map>
+#include <tuple>
 #include <StringHelper.h>
 
 #include "BattleHallDistanceWindow.h"
@@ -19,6 +21,11 @@ extern "C" {
 #include "variables.h"
 #include <soh/ActorDB.h>
 #include <soh/Enhancements/nametag.h>
+#include <soh/Network/Sail/Sail.h>
+#include <overlays/misc/ovl_kaleido_scope/z_kaleido_scope.h>
+#include <textures/icon_item_nes_static/icon_item_nes_static.h>
+#include <textures/icon_item_ger_static/icon_item_ger_static.h>
+#include <textures/icon_item_fra_static/icon_item_fra_static.h>
 extern PlayState* gPlayState;
 }
 
@@ -140,6 +147,10 @@ auto hallSubActors = std::to_array<ActorID>({
     ACTOR_EN_BILI
 });
 
+auto duplicateActorData = std::to_array<std::tuple<ActorID, int>>({
+    {ACTOR_EN_TORCH2, 1}
+});
+
 BattleHallData sHallData;
 std::shared_ptr<BattleHallDebugWindow> sDbgWindow;
 std::shared_ptr<BattleHallDistWindow> sDistWindow;
@@ -175,6 +186,16 @@ void BattleHall_Vec3f_SetRandom(Vec3f* out) {
     BattleHall_GetRandomVec3f(out, Vec3f(-ROOM_BOUND_X, 0, -ROOM_BOUND_Z), Vec3f(ROOM_BOUND_X, 0, ROOM_BOUND_Z));
 }
 
+int BattleHall_GetMaxActorSpawn(ActorID id) {
+    for (size_t i = 0; i < duplicateActorData.size(); i++) {
+        auto& foundVal = duplicateActorData[i];
+
+        if (std::get<0>(foundVal) == id)
+            return std::get<1>(foundVal);
+    }
+    return -1;
+}
+
 // gets a random val between [min..max)
 int BattleHall_RandRange(int min, int max) {
     return rand() % (max - min + 1) + min;
@@ -188,7 +209,7 @@ void BattleHall_GetRandomVec3f(Vec3f* out, const Vec3f& minCoord, const Vec3f& m
 
 void BattleHall_QueueAllAvailableActors() {
     for (size_t i = BH_ACTORS_VERY_EASY; i < BH_ACTORS_MAX; i++) {
-        BattleHall_RegisterActor((BattleHallValidActors)i, BattleHall_GetRandomTestName());
+        BattleHall_RegisterActor((BattleHallValidActors)i, BattleHall_GetRandomTestName(), StringHelper::Sprintf("TestQueue%d", i).c_str());
     }
 }
 
@@ -210,6 +231,10 @@ f32 BattleHall_GetActorSpawnOffset(BattleHallValidActors type) {
 
 s16 BattleHall_GetActorParams(BattleHallValidActors type) {
     return hallActorsAll[type].params;
+}
+
+void BattleHall_InitializeStaticData() {
+    sHallData = BattleHallData();
 }
 
 void BattleHall_SetEquipment(u8 linkAge) {
@@ -348,14 +373,8 @@ void BattleHall_InitSave() {
         ITEM_STICK,     ITEM_NUT,          ITEM_BOMB,        ITEM_BOW,        ITEM_ARROW_FIRE,  ITEM_DINS_FIRE,
         ITEM_SLINGSHOT, ITEM_OCARINA_TIME, ITEM_BOMBCHU,     ITEM_LONGSHOT,   ITEM_ARROW_ICE,   ITEM_FARORES_WIND,
         ITEM_BOOMERANG, ITEM_LENS,         ITEM_BEAN,        ITEM_HAMMER,     ITEM_ARROW_LIGHT, ITEM_NAYRUS_LOVE,
-        ITEM_FAIRY,     ITEM_FAIRY,        ITEM_POTION_BLUE, ITEM_POTION_RED, ITEM_CLAIM_CHECK, ITEM_MASK_BUNNY,
+        ITEM_BOTTLE,    ITEM_BOTTLE,       ITEM_BOTTLE,      ITEM_BOTTLE,     ITEM_CLAIM_CHECK, ITEM_MASK_BUNNY,
     };
-
-    // remove fairies if in OHKO mode
-    if (CheckBHOptionFlag(BH_OPTIONS_HEARTS, BH_CHOICE_HEARTS_OHKO)) {
-        bhItems[18] = ITEM_BOTTLE;
-        bhItems[19] = ITEM_BOTTLE;
-    }
 
     for (int item = 0; item < ARRAY_COUNT(gSaveContext.inventory.items); item++) {
         gSaveContext.inventory.items[item] = bhItems[item];
@@ -391,33 +410,67 @@ void BattleHall_InitSave() {
     BattleHall_SetEquipment(LINK_AGE_ADULT);
 }
 
-void BattleHall_RegisterActor(BattleHallValidActors type, const char* name) {
-    sHallData.actorQueue.push_back({ 
-        type,
-        name
-    });
+void BattleHall_RegisterActor(BattleHallValidActors type, const char* name, const char* id) {
+    if (std::find_if(sHallData.actorQueue.begin(), sHallData.actorQueue.end(), 
+        [id](ActorQueueEntry& val) {
+            return val.donoId == id;
+        }) != sHallData.actorQueue.end())
+        return;
+
+    sHallData.actorQueue.push_back({ type, id, name });
 }
 
 void BattleHall_HandleActorSpawn() {
     if (sHallData.isSpawnActorsInQueue) {
         sHallData.isSpawnActorsInQueue = false;
+
+        if (sHallData.actorQueue.empty()) {
+            Flags_SetSwitch(gPlayState, FLAG_OPEN_GATE);
+            return;
+        }
+
         sHallData.isSpawningActors = true;
+
+        for (const auto& actor : sHallData.curAliveActors)
+            Actor_Kill(actor);
 
         sHallData.curAliveActors.clear();
 
-        for (const auto& entry : sHallData.actorQueue) {
-            BattleHall_SpawnActorWithName(entry.type, entry.name.c_str());
+        int idx = 0;
+        for (auto entryIter = sHallData.actorQueue.begin(); entryIter != sHallData.actorQueue.end();) {
+            auto& entry = *entryIter;
+            if (BattleHall_SpawnActorWithName(entry.type, entry.name.c_str()) != nullptr) {
+                entryIter = sHallData.actorQueue.erase(entryIter);
+
+                if (idx++ >= sHallData.spawnLimit)
+                    break;
+            } else {
+                // advance iterator if actor spawning was skipped/unsucessful
+                entryIter++;
+            }
+        }
+
+        if (sHallData.actorQueue.size() == 1) {
+            const auto& entry = sHallData.actorQueue[0];
+            if (BattleHall_SpawnActorWithName(entry.type, entry.name.c_str()) != nullptr) {
+                sHallData.actorQueue.pop_back();
+            }
         }
 
         Flags_UnsetSwitch(gPlayState, FLAG_OPEN_GATE);
 
-        sHallData.actorQueue.clear();
         sHallData.isSpawningActors = false;
     }
 }
 
+static void* sSavePromptNoChoiceTexs[] = {
+    (void*)gPauseNoENGTex,
+    (void*)gPauseNoGERTex,
+    (void*)gPauseNoFRATex,
+};
+
 void BattleHallOnVanillaBehaviour(GIVanillaBehavior id, bool* should, va_list originalArgs) {
-    if (gPlayState->sceneNum != SCENE_BATTLEHALL)
+    if (!IS_BATTLE_HALL)
         return;
 
     va_list args;
@@ -448,6 +501,24 @@ void BattleHallOnVanillaBehaviour(GIVanillaBehavior id, bool* should, va_list or
             }
             break;
         }
+        case VB_TRANSITION_TO_SAVE_SCREEN_ON_DEATH: {
+            PauseContext* pauseCtx = va_arg(args, PauseContext*);
+            pauseCtx->state = 0xF;
+            *should = false;
+            break;
+        }
+        // Show "No" twice because the player can't continue.
+        case VB_RENDER_YES_ON_CONTINUE_PROMPT: {
+            Gfx** disp = va_arg(args, Gfx**);
+            *disp = KaleidoScope_QuadTextureIA8(*disp, sSavePromptNoChoiceTexs[gSaveContext.language], 48, 16, 12);
+            *should = false;
+            break;
+        }
+        // Break the dodongo breakable floor immediately so the player can jump in the hole immediately.
+        case VB_BG_BREAKWALL_BREAK: {
+            *should = true;
+            break;
+        }
         // Prevent saving
         case VB_BE_ABLE_TO_SAVE:
         // Rupees are useless in boss rush
@@ -463,6 +534,9 @@ void BattleHallOnVanillaBehaviour(GIVanillaBehavior id, bool* should, va_list or
 }
 
 void BattleHallOnGameFrameUpdateHandler() {
+    if (!IS_BATTLE_HALL)
+        return;
+
     if (Flags_GetRandomizerInf(RAND_INF_HAS_INFINITE_QUIVER)) {
         AMMO(ITEM_BOW) = CUR_CAPACITY(UPG_QUIVER);
     }
@@ -493,7 +567,7 @@ void BattleHallOnGameFrameUpdateHandler() {
 }
 
 void BattleHallOnPlayerUpdate() {
-    if (gPlayState->sceneNum != SCENE_BATTLEHALL)
+    if (!IS_BATTLE_HALL)
         return;
 
     Player* player = GET_PLAYER(gPlayState);
@@ -531,15 +605,15 @@ void BattleHallOnSceneInit(u16 sceneNum) {
     sHallData.curAliveActors.clear();
     sHallData.actorQueue.clear();
 
-    // set gate as open initially
-    Flags_SetSwitch(gPlayState, FLAG_OPEN_GATE);
+    // clear out/initialize static data to ensure clean data
+    BattleHall_InitializeStaticData();
 
     //BattleHall_QueueAllAvailableActors();
+    //sHallData.isSpawnActorsInQueue = true;
 }
 
 void BattleHallOnActorKillHook(void* actorPtr) {
-    if (gPlayState->sceneNum != SCENE_BATTLEHALL)
-        return;
+    if (!IS_BATTLE_HALL) return;
     Actor* actor = (Actor*)actorPtr;
     ActorID id = (ActorID)actor->id;
 
@@ -557,8 +631,9 @@ void BattleHallOnActorKillHook(void* actorPtr) {
 }
 
 void BattleHallOnActorInitHook(void* actorPtr) {
-    if (gPlayState->sceneNum != SCENE_BATTLEHALL)
+    if (!IS_BATTLE_HALL)
         return;
+    
     Actor* actor = (Actor*)actorPtr;
     ActorID id = (ActorID)actor->id;
 
@@ -578,6 +653,8 @@ void BattleHall_RegisterHooks() {
     static u32 onActorKillHook = 0;
 
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnLoadGame>([](int32_t fileNum) {
+        if(fileNum != 0xFD) return;
+
         GameInteractor::Instance->UnregisterGameHook<GameInteractor::OnVanillaBehavior>(onVanillaBehaviorHook);
         GameInteractor::Instance->UnregisterGameHook<GameInteractor::OnGameFrameUpdate>(onGameFrameUpdateHook);
         GameInteractor::Instance->UnregisterGameHook<GameInteractor::OnPlayerUpdate>(onPlayerUpdate);
@@ -657,6 +734,20 @@ void BattleHall_OnChildActorSpawn(Actor* actor, Actor* parent) {
 
 Actor* BattleHall_SpawnActorWithName(BattleHallValidActors type, const char* name) {
     auto& actorEntry = hallActorsAll[type];
+
+    int maxCount = BattleHall_GetMaxActorSpawn(actorEntry.id);
+
+    if (maxCount != -1) {
+        std::vector<Actor*> result;
+
+        // Using a lambda expression to define the condition
+        std::copy_if(sHallData.curAliveActors.begin(), sHallData.curAliveActors.end(), std::back_inserter(result),
+                     [actorEntry](Actor* val) { return val->id == actorEntry.id; });
+
+        // dont spawn actor if there are more than a specified amount of actos
+        if (result.size() >= maxCount)
+            return nullptr;
+    }
     
     auto& dbEntry = ActorDB::Instance->RetrieveEntry(actorEntry.id);
 

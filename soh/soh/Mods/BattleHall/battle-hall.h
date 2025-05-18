@@ -92,6 +92,7 @@ typedef enum {
 #define ROOM_BOUND_X 200.0f
 #define ROOM_BOUND_Z 800.0f
 #define FLAG_OPEN_GATE 0xA
+#define SPAWN_LIMIT 50
 
 #ifdef __cplusplus
 
@@ -100,15 +101,17 @@ typedef enum {
 
 struct ActorQueueEntry {
     BattleHallValidActors type;
+    std::string donoId;
     std::string name;
 };
 
 struct BattleHallData {
-    Vec3f curLoopOffset = { 0.0f, 0.0f, 0.0f };
+    Vec3f curLoopOffset = { 0.0f, 0.0f, -LOOP_POINT_Z };
     std::vector<Actor*> curAliveActors;
     std::vector<ActorQueueEntry> actorQueue;
     float totalRunDist = 0.0f;
     int loopCount = 0;
+    int spawnLimit = SPAWN_LIMIT;
     bool isPushPlayer = false;
     bool isSpawnActorsInQueue = true;
     bool isSpawnInitActors = false;
@@ -123,7 +126,7 @@ struct HallActorData {
 
 void BattleHall_WarpPlayer(Vec3f* movePos);
 Actor* BattleHall_SpawnActorWithName(BattleHallValidActors type, const char* name);
-void BattleHall_RegisterActor(BattleHallValidActors type, const char* name);
+void BattleHall_RegisterActor(BattleHallValidActors type, const char* name, const char* id);
 int BattleHall_RandRange(int min, int max);
 const char* BattleHall_GetRandomTestName();
 void BattleHall_GetRandomVec3f(Vec3f* out, const Vec3f& minCoord, const Vec3f& maxCoord);

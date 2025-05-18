@@ -276,13 +276,15 @@ class SpawnActor : public GameInteractionEffectBase, public ParameterizedGameInt
 class BHQueueEnemy : public GameInteractionEffectBase {
   private:
     std::string enemyName;
+    std::string donoId;
     int16_t enemyType;
   public:
     GameInteractionEffectQueryResult CanBeApplied() override;
     void _Apply() override;
 
-    void SetParams(const std::string& name, int16_t type) {
+    void SetParams(const std::string& name, const std::string& id, int16_t type) {
         enemyName = name;
+        donoId = id;
         enemyType = type;
     }
 };

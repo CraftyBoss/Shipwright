@@ -671,7 +671,7 @@ GameInteractionEffectQueryResult BHQueueEnemy::CanBeApplied() {
 }
 
 void BHQueueEnemy::_Apply() {
-    BattleHall_RegisterActor((BattleHallValidActors)enemyType, enemyName.c_str());
+    BattleHall_RegisterActor((BattleHallValidActors)enemyType, enemyName.c_str(), donoId.c_str());
 }
 
 } // namespace GameInteractionEffect

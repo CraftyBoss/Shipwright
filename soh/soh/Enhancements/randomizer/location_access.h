@@ -354,7 +354,7 @@ extern void DumpWorldGraph(std::string str);
 void RegionTable_Init();
 Region* RegionTable(const RandomizerRegion regionKey);
 std::vector<Rando::Entrance*> GetShuffleableEntrances(Rando::EntranceType type, bool onlyPrimary = true);
-Rando::Entrance* GetEntrance(RandomizerRegion source, RandomizerRegion destination);
+Rando::Entrance* GetEntrance(const std::string name);
 
 // Overworld
 void RegionTable_Init_KokiriForest();

@@ -77,6 +77,12 @@ void SohMenu::AddMenuRandomizer() {
         .Options(CheckboxOptions().Tooltip(
             "When shuffling boss souls, they'll appear as a simpler model instead of showing the boss' models."
             "This might make boss souls more distinguishable from a distance, and can help with performance."));
+
+    AddWidget(path, "Boss Door Texture Matches Boss", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_RANDOMIZER_ENHANCEMENT("BossDoorTexMatchesBoss"))
+        .RaceDisable(false)
+        .Options(CheckboxOptions().Tooltip("When randomized bosses are enabled, the dungeon the boss is found in will have the correct texture for the randomized boss."));
+
     AddWidget(path, "Skip Get Item Animations", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_RANDOMIZER_ENHANCEMENT("TimeSavers.SkipGetItemAnimation"))
         .Options(ComboboxOptions().ComboMap(skipGetItemAnimationOptions).DefaultIndex(SGIA_JUNK));

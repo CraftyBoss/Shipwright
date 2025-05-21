@@ -61,6 +61,22 @@ void MagicDark_Init(Actor* thisx, PlayState* play) {
         this->timer = 0;
         gSaveContext.nayrusLoveTimer = 0;
     }
+
+    if (CVarGetInteger(CVAR_ENHANCEMENT("NayruLoveSingleUse"), 0)) {
+        // remove nayrus love from inventory after usage
+        gSaveContext.inventory.items[SLOT_NAYRUS_LOVE] = ITEM_NONE;
+
+        // unequip nayrus love from c buttons
+        for (int button = 0; button < ARRAY_COUNT(gSaveContext.equips.cButtonSlots); button++) {
+            if (gSaveContext.equips.cButtonSlots[button] == SLOT_NAYRUS_LOVE)
+                gSaveContext.equips.cButtonSlots[button] = SLOT_NONE;
+        }
+
+        for (int button = 0; button < ARRAY_COUNT(gSaveContext.equips.buttonItems); button++) {
+            if (gSaveContext.equips.buttonItems[button] == ITEM_NAYRUS_LOVE)
+                gSaveContext.equips.buttonItems[button] = ITEM_NONE;
+        }
+    }
 }
 
 void MagicDark_Destroy(Actor* thisx, PlayState* play) {

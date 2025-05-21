@@ -1081,6 +1081,17 @@ void SohMenu::AddMenuEnhancements() {
         .Options(CheckboxOptions().Tooltip(
             "When you lose 4 quarters of a heart you will permanently lose that Heart Container.\n\n"
             "Disabling this after the fact will restore your Heart Containers."));
+
+    AddWidget(path, "Gloom Mode", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("GloomMode"))
+        .Callback([](WidgetInfo& info) { UpdatePermanentHeartLossState(); })
+        .Options(CheckboxOptions().Tooltip("Whenever you take damage, regardless of the amount, your Heart Containers will decrease by one."));
+
+    AddWidget(path, "Damage while Shielding", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("ShieldingDealsDamage"))
+        .Options(CheckboxOptions().Tooltip(
+            "Blocking any attack with a shield will deal one heart of damage."));
+
     AddWidget(path, "Damage Multiplier", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_ENHANCEMENT("DamageMult"))
         .Options(ComboboxOptions().ComboMap(allPowers).DefaultIndex(0).Tooltip(
@@ -1172,6 +1183,12 @@ void SohMenu::AddMenuEnhancements() {
         .CVar(CVAR_ENHANCEMENT("CuccoStayDurationMult"))
         .Options(IntSliderOptions().Min(1).Max(5).DefaultValue(1).Format("%dx").Tooltip(
             "Cuccos will stay in place longer after putting them down, by a multiple of the value of the slider."));
+
+    AddWidget(path, "One Time Use Nayru's Love", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("NayruLoveSingleUse"))
+        .Callback([](WidgetInfo& info) { UpdatePermanentHeartLossState(); })
+        .Options(CheckboxOptions().Tooltip(
+            "Using Nayru's Love will remove itself from your inventory."));
 
     path.column = SECTION_COLUMN_3;
     AddWidget(path, "Enemies", WIDGET_SEPARATOR_TEXT);

@@ -401,6 +401,12 @@ void HealthMeter_Draw(PlayState* play) {
     s32 curCombineModeSet = 0;
     u8* curBgImgLoaded = NULL;
     s32 ddHeartCountMinusOne = gSaveContext.isDoubleDefenseAcquired ? totalHeartCount - 1 : -1;
+    if (CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0)) {
+        ddHeartCountMinusOne = CVarGetInteger(CVAR_ENHANCEMENT("GloomModeDefenseProtection"), 0)
+                                   ? ddHeartCountMinusOne - 1
+                                   : ddHeartCountMinusOne;
+    }
+
     f32 HeartsScale = 0.7f;
     if (CVarGetInteger(CVAR_COSMETIC("HUD.HeartsCount.PosType"), 0) != ORIGINAL_LOCATION) {
         HeartsScale = CVarGetFloat(CVAR_COSMETIC("HUD.HeartsCount.Scale"), 0.7f);

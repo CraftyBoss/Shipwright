@@ -4735,6 +4735,7 @@ s32 func_808382DC(Player* this, PlayState* play) {
             this->unk_A86 = 0;
         }
     } else {
+        // crush check
         sp68 = ((Player_GetHeight(this) - 8.0f) < (this->unk_6C4 * this->actor.scale.y));
 
         if (sp68 || (this->actor.bgCheckFlags & 0x100) || (sFloorType == 9) ||
@@ -4789,6 +4790,14 @@ s32 func_808382DC(Player* this, PlayState* play) {
                           this->knockbackYVelocity, this->knockbackRot, 20);
         } else {
             sp64 = (this->shieldQuad.base.acFlags & AC_BOUNCED) != 0;
+
+            // if in gloom mode, shielding should do nothing and instead will be considered for damage
+            if (CVarGetInteger(CVAR_ENHANCEMENT("ShieldingDealsDamage"), 0)) {
+                // if the attacker is twinrova, treat the attack as normal instead of dealing damage
+                if (!(this->shieldQuad.base.ac != NULL && this->shieldQuad.base.ac->id == ACTOR_BOSS_TW)) {
+                    sp64 = false;
+                }
+            }
 
             //! @bug The second set of conditions here seems intended as a way for Link to "block" hits by rolling.
             // However, `Collider.atFlags` is a byte so the flag check at the end is incorrect and cannot work.
@@ -4849,8 +4858,11 @@ s32 func_808382DC(Player* this, PlayState* play) {
                 return 0;
             }
 
-            if (this->cylinder.base.acFlags & AC_HIT) {
-                Actor* ac = this->cylinder.base.ac;
+            s32 isShieldDamage =
+                CVarGetInteger(CVAR_ENHANCEMENT("ShieldingDealsDamage"), 0) && this->shieldQuad.base.acFlags & AC_BOUNCED;
+
+            if (this->cylinder.base.acFlags & AC_HIT || isShieldDamage) {
+                Actor* ac = isShieldDamage ? this->shieldQuad.base.ac : this->cylinder.base.ac;
                 s32 sp4C;
 
                 if (ac->flags & ACTOR_FLAG_SFX_FOR_PLAYER_BODY_HIT) {
@@ -4868,6 +4880,11 @@ s32 func_808382DC(Player* this, PlayState* play) {
                 } else {
                     func_80838280(this);
                     sp4C = PLAYER_HIT_RESPONSE_NONE;
+                }
+
+                // set damage amount to one heart when damage is from shielding
+                if (isShieldDamage && ac->id != ACTOR_BOSS_TW) {
+                    this->actor.colChkInfo.damage = 0x10;
                 }
 
                 func_80837C0C(play, this, sp4C, 4.0f, 5.0f, Actor_WorldYawTowardActor(ac, &this->actor), 20);
@@ -5362,7 +5379,7 @@ s32 Player_ActionHandler_1(Player* this, PlayState* play) {
                 this->unk_45C.x = this->actor.world.pos.x + ((doorDirection * -120.0f) * sp74);
                 this->unk_45C.z = this->actor.world.pos.z + ((doorDirection * -120.0f) * sp78);
 
-                doorShutter->unk_164 = 1;
+                doorShutter->isActive = 1;
                 func_80832224(this);
 
                 if (this->doorTimer != 0) {

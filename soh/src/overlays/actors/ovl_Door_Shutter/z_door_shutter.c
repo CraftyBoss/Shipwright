@@ -24,6 +24,7 @@
 #include "objects/object_demo_kekkai/object_demo_kekkai.h"
 #include "objects/object_ouke_haka/object_ouke_haka.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
+#include "soh/Enhancements/randomizer/randomizer_entrance.h"
 
 #define FLAGS ACTOR_FLAG_UPDATE_CULLING_DISABLED
 
@@ -61,66 +62,214 @@ const ActorInit Door_Shutter_InitVars = {
     NULL,
 };
 
+typedef enum DoorShutterGfxType {
+    /*  0 */ DOORSHUTTER_GFX_DEKU_TREE_1,
+    /*  1 */ DOORSHUTTER_GFX_DEKU_TREE_2,
+    /*  2 */ DOORSHUTTER_GFX_DODONGOS_CAVERN,
+    /*  3 */ DOORSHUTTER_GFX_JABU_JABU,
+    /*  4 */ DOORSHUTTER_GFX_PHANTOM_GANON_BARS,
+    /*  5 */ DOORSHUTTER_GFX_GOHMA_BLOCK,
+    /*  6 */ DOORSHUTTER_GFX_SPIRIT_TEMPLE,
+    /*  7 */ DOORSHUTTER_GFX_BOSS_DOOR,
+    /*  8 */ DOORSHUTTER_GFX_GENERIC,
+    /*  9 */ DOORSHUTTER_GFX_FIRE_TEMPLE_1,
+    /* 10 */ DOORSHUTTER_GFX_FIRE_TEMPLE_2,
+    /* 11 */ DOORSHUTTER_GFX_GANONS_TOWER,
+    /* 12 */ DOORSHUTTER_GFX_WATER_TEMPLE_1,
+    /* 13 */ DOORSHUTTER_GFX_WATER_TEMPLE_2,
+    /* 14 */ DOORSHUTTER_GFX_SHADOW_TEMPLE_1,
+    /* 15 */ DOORSHUTTER_GFX_SHADOW_TEMPLE_2,
+    /* 16 */ DOORSHUTTER_GFX_ICE_CAVERN,
+    /* 17 */ DOORSHUTTER_GFX_GERUDO_TRAINING_GROUND,
+    /* 18 */ DOORSHUTTER_GFX_GANONS_CASTLE,
+    /* 19 */ DOORSHUTTER_GFX_ROYAL_FAMILYS_TOMB
+} DoorShutterGfxType;
+
+typedef enum DoorShutterStyleType {
+    /* -1 */ DOORSHUTTER_STYLE_FROM_SCENE = -1, // Style is taken from `sSceneInfo`
+    /*  0 */ DOORSHUTTER_STYLE_PHANTOM_GANON,
+    /*  1 */ DOORSHUTTER_STYLE_GOHMA_BLOCK,
+    /*  2 */ DOORSHUTTER_STYLE_DEKU_TREE,
+    /*  3 */ DOORSHUTTER_STYLE_DODONGOS_CAVERN,
+    /*  4 */ DOORSHUTTER_STYLE_JABU_JABU,
+    /*  5 */ DOORSHUTTER_STYLE_FOREST_TEMPLE,
+    /*  6 */ DOORSHUTTER_STYLE_BOSS_DOOR,
+    /*  7 */ DOORSHUTTER_STYLE_GENERIC, // Default for some `DoorShutterType`s
+    /*  8 */ DOORSHUTTER_STYLE_FIRE_TEMPLE,
+    /*  9 */ DOORSHUTTER_STYLE_GANONS_TOWER,
+    /* 10 */ DOORSHUTTER_STYLE_SPIRIT_TEMPLE,
+    /* 11 */ DOORSHUTTER_STYLE_WATER_TEMPLE,
+    /* 12 */ DOORSHUTTER_STYLE_SHADOW_TEMPLE,
+    /* 13 */ DOORSHUTTER_STYLE_ICE_CAVERN,
+    /* 14 */ DOORSHUTTER_STYLE_GERUDO_TRAINING_GROUND,
+    /* 15 */ DOORSHUTTER_STYLE_GANONS_CASTLE,
+    /* 16 */ DOORSHUTTER_STYLE_ROYAL_FAMILYS_TOMB
+} DoorShutterStyleType;
+
 typedef struct {
     s16 objectId;
     u8 index1;
     u8 index2;
-} ShutterObjectInfo;
+} DoorShutterStyleInfo;
 
-static ShutterObjectInfo sObjectInfo[] = {
-    { OBJECT_GND, 4, 4 },
-    { OBJECT_GOMA, 5, 5 },
-    { OBJECT_YDAN_OBJECTS, 0, 1 },
-    { OBJECT_DDAN_OBJECTS, 2, 2 },
-    { OBJECT_BDAN_OBJECTS, 3, 3 },
-    { OBJECT_GAMEPLAY_KEEP, 8, 8 },
-    { OBJECT_BDOOR, 7, 7 },
-    { OBJECT_GAMEPLAY_KEEP, 8, 8 },
-    { OBJECT_HIDAN_OBJECTS, 9, 10 },
-    { OBJECT_GANON_OBJECTS, 11, 11 },
-    { OBJECT_JYA_DOOR, 6, 6 },
-    { OBJECT_MIZU_OBJECTS, 12, 13 },
-    { OBJECT_HAKA_DOOR, 14, 15 },
-    { OBJECT_ICE_OBJECTS, 16, 16 },
-    { OBJECT_MENKURI_OBJECTS, 17, 17 },
-    { OBJECT_DEMO_KEKKAI, 18, 18 },
-    { OBJECT_OUKE_HAKA, 19, 19 },
+static DoorShutterStyleInfo sStyleInfo[] = {
+    /* DOORSHUTTER_STYLE_PHANTOM_GANON */
+    {
+        OBJECT_GND,
+        DOORSHUTTER_GFX_PHANTOM_GANON_BARS,
+        DOORSHUTTER_GFX_PHANTOM_GANON_BARS,
+    },
+    /* DOORSHUTTER_STYLE_GOHMA_BLOCK */
+    {
+        OBJECT_GOMA,
+        DOORSHUTTER_GFX_GOHMA_BLOCK,
+        DOORSHUTTER_GFX_GOHMA_BLOCK,
+    },
+    /* DOORSHUTTER_STYLE_DEKU_TREE */
+    {
+        OBJECT_YDAN_OBJECTS,
+        DOORSHUTTER_GFX_DEKU_TREE_1,
+        DOORSHUTTER_GFX_DEKU_TREE_2,
+    },
+    /* DOORSHUTTER_STYLE_DODONGOS_CAVERN */
+    {
+        OBJECT_DDAN_OBJECTS,
+        DOORSHUTTER_GFX_DODONGOS_CAVERN,
+        DOORSHUTTER_GFX_DODONGOS_CAVERN,
+    },
+    /* DOORSHUTTER_STYLE_JABU_JABU */
+    {
+        OBJECT_BDAN_OBJECTS,
+        DOORSHUTTER_GFX_JABU_JABU,
+        DOORSHUTTER_GFX_JABU_JABU,
+    },
+    /* DOORSHUTTER_STYLE_FOREST_TEMPLE */
+    {
+        OBJECT_GAMEPLAY_KEEP,
+        DOORSHUTTER_GFX_GENERIC,
+        DOORSHUTTER_GFX_GENERIC,
+    },
+    /* DOORSHUTTER_STYLE_BOSS_DOOR */
+    {
+        OBJECT_BDOOR,
+        DOORSHUTTER_GFX_BOSS_DOOR,
+        DOORSHUTTER_GFX_BOSS_DOOR,
+    },
+    /* DOORSHUTTER_STYLE_GENERIC */
+    {
+        OBJECT_GAMEPLAY_KEEP,
+        DOORSHUTTER_GFX_GENERIC,
+        DOORSHUTTER_GFX_GENERIC,
+    },
+    /* DOORSHUTTER_STYLE_FIRE_TEMPLE */
+    {
+        OBJECT_HIDAN_OBJECTS,
+        DOORSHUTTER_GFX_FIRE_TEMPLE_1,
+        DOORSHUTTER_GFX_FIRE_TEMPLE_2,
+    },
+    /* DOORSHUTTER_STYLE_GANONS_TOWER */
+    {
+        OBJECT_GANON_OBJECTS,
+        DOORSHUTTER_GFX_GANONS_TOWER,
+        DOORSHUTTER_GFX_GANONS_TOWER,
+    },
+    /* DOORSHUTTER_STYLE_SPIRIT_TEMPLE */
+    {
+        OBJECT_JYA_DOOR,
+        DOORSHUTTER_GFX_SPIRIT_TEMPLE,
+        DOORSHUTTER_GFX_SPIRIT_TEMPLE,
+    },
+    /* DOORSHUTTER_STYLE_WATER_TEMPLE */
+    {
+        OBJECT_MIZU_OBJECTS,
+        DOORSHUTTER_GFX_WATER_TEMPLE_1,
+        DOORSHUTTER_GFX_WATER_TEMPLE_2,
+    },
+    /* DOORSHUTTER_STYLE_SHADOW_TEMPLE */
+    {
+        OBJECT_HAKA_DOOR,
+        DOORSHUTTER_GFX_SHADOW_TEMPLE_1,
+        DOORSHUTTER_GFX_SHADOW_TEMPLE_2,
+    },
+    /* DOORSHUTTER_STYLE_ICE_CAVERN */
+    {
+        OBJECT_ICE_OBJECTS,
+        DOORSHUTTER_GFX_ICE_CAVERN,
+        DOORSHUTTER_GFX_ICE_CAVERN,
+    },
+    /* DOORSHUTTER_STYLE_GERUDO_TRAINING_GROUND */
+    {
+        OBJECT_MENKURI_OBJECTS,
+        DOORSHUTTER_GFX_GERUDO_TRAINING_GROUND,
+        DOORSHUTTER_GFX_GERUDO_TRAINING_GROUND,
+    },
+    /* DOORSHUTTER_STYLE_GANONS_CASTLE */
+    {
+        OBJECT_DEMO_KEKKAI,
+        DOORSHUTTER_GFX_GANONS_CASTLE,
+        DOORSHUTTER_GFX_GANONS_CASTLE,
+    },
+    /* DOORSHUTTER_STYLE_ROYAL_FAMILYS_TOMB */
+    {
+        OBJECT_OUKE_HAKA,
+        DOORSHUTTER_GFX_ROYAL_FAMILYS_TOMB,
+        DOORSHUTTER_GFX_ROYAL_FAMILYS_TOMB,
+    },
 };
 
-typedef struct {
-    /* 0x0000 */ Gfx* a;
-    /* 0x0004 */ Gfx* b;
-    /* 0x0008 */ u8 c;
-    /* 0x0009 */ u8 translateZ;
-    /* 0x000A */ u8 e;
-    /* 0x000B */ u8 f;
-} ShutterInfo;
+typedef struct DoorShutterGfxInfo {
+    /* 0x0000 */ Gfx* doorDL;
+    /* 0x0004 */ Gfx* barsDL;
+    /* 0x0008 */ u8 barsOpenOffsetY;
+    /* 0x0009 */ u8 barsOffsetZ;
+    /* 0x000A */ u8 rangeSides;
+    /* 0x000B */ u8 rangeY;
+} DoorShutterGfxInfo;
 
-static ShutterInfo sShutterInfo[] = {
-    { gDTDungeonDoor1DL, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { gDTDungeonDoor2DL, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { gDodongoDoorDL, gDodongoBarsDL, 240, 14, 70, 15 },
-    { gJabuDoorSection1DL, gJabuWebDoorDL, 0, 110, 50, 15 },
-    { gPhantomGanonBarsDL, NULL, 130, 12, 50, 15 },
-    { gGohmaDoorDL, NULL, 130, 12, 50, 15 },
-    { gSpiritDoorDL, gJyaDoorMetalBarsDL, 240, 14, 50, 15 },
-    { gBossDoorDL, NULL, 130, 12, 50, 15 },
-    { gDungeonDoorDL, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { gFireTempleDoorFrontDL, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { gFireTempleDoorBackDL, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { object_ganon_objects_DL_0000C0, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { gObjectMizuObjectsDoorShutterDL_005D90, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { gObjectMizuObjectsDoorShutterDL_007000, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { object_haka_door_DL_002620, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { object_haka_door_DL_003890, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { object_ice_objects_DL_001D10, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { gGTGDoorDL, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { gGanonsCastleDoorDL, gDoorMetalBarsDL, 130, 12, 20, 15 },
-    { object_ouke_haka_DL_0000C0, gDoorMetalBarsDL, 130, 12, 20, 15 },
+static DoorShutterGfxInfo sGfxInfo[] = {
+    { gDTDungeonDoor1DL, gDoorMetalBarsDL, 130, 12, 20, 15 }, // DOORSHUTTER_GFX_DEKU_TREE_1
+    { gDTDungeonDoor2DL, gDoorMetalBarsDL, 130, 12, 20, 15 }, // DOORSHUTTER_GFX_DEKU_TREE_2
+    { gDodongoDoorDL, gDodongoBarsDL, 240, 14, 70, 15 },      // DOORSHUTTER_GFX_DODONGOS_CAVERN
+#if OOT_VERSION < NTSC_1_1
+    { gJabuDoorSection1DL, gJabuWebDoorDL, 0, 110, 70, 15 }, // DOORSHUTTER_GFX_JABU_JABU
+    { gPhantomGanonBarsDL, NULL, 130, 12, 70, 15 },          // DOORSHUTTER_GFX_PHANTOM_GANON_BARS
+    { gGohmaDoorDL, NULL, 130, 12, 70, 15 },                 // DOORSHUTTER_GFX_GOHMA_BLOCK
+    { gSpiritDoorDL, gJyaDoorMetalBarsDL, 240, 14, 50, 15 }, // DOORSHUTTER_GFX_SPIRIT_TEMPLE
+    { gBossDoorDL, NULL, 130, 12, 70, 15 },                  // DOORSHUTTER_GFX_BOSS_DOOR
+#else
+    { gJabuDoorSection1DL, gJabuWebDoorDL, 0, 110, 50, 15 }, // DOORSHUTTER_GFX_JABU_JABU
+    { gPhantomGanonBarsDL, NULL, 130, 12, 50, 15 },          // DOORSHUTTER_GFX_PHANTOM_GANON_BARS
+    { gGohmaDoorDL, NULL, 130, 12, 50, 15 },                 // DOORSHUTTER_GFX_GOHMA_BLOCK
+    { gSpiritDoorDL, gJyaDoorMetalBarsDL, 240, 14, 50, 15 }, // DOORSHUTTER_GFX_SPIRIT_TEMPLE
+    { gBossDoorDL, NULL, 130, 12, 50, 15 },                  // DOORSHUTTER_GFX_BOSS_DOOR
+#endif
+    { gDungeonDoorDL, gDoorMetalBarsDL, 130, 12, 20, 15 },                         // DOORSHUTTER_GFX_GENERIC
+    { gFireTempleDoorFrontDL, gDoorMetalBarsDL, 130, 12, 20, 15 },                 // DOORSHUTTER_GFX_FIRE_TEMPLE_1
+    { gFireTempleDoorBackDL, gDoorMetalBarsDL, 130, 12, 20, 15 },                  // DOORSHUTTER_GFX_FIRE_TEMPLE_2
+    { object_ganon_objects_DL_0000C0, gDoorMetalBarsDL, 130, 12, 20, 15 },         // DOORSHUTTER_GFX_GANONS_TOWER
+    { gObjectMizuObjectsDoorShutterDL_005D90, gDoorMetalBarsDL, 130, 12, 20, 15 }, // DOORSHUTTER_GFX_WATER_TEMPLE_1
+    { gObjectMizuObjectsDoorShutterDL_007000, gDoorMetalBarsDL, 130, 12, 20, 15 }, // DOORSHUTTER_GFX_WATER_TEMPLE_2
+    { object_haka_door_DL_002620, gDoorMetalBarsDL, 130, 12, 20, 15 },             // DOORSHUTTER_GFX_SHADOW_TEMPLE_1
+    { object_haka_door_DL_003890, gDoorMetalBarsDL, 130, 12, 20, 15 },             // DOORSHUTTER_GFX_SHADOW_TEMPLE_2
+    { object_ice_objects_DL_001D10, gDoorMetalBarsDL, 130, 12, 20, 15 },           // DOORSHUTTER_GFX_ICE_CAVERN
+    { gGTGDoorDL, gDoorMetalBarsDL, 130, 12, 20, 15 },                 // DOORSHUTTER_GFX_GERUDO_TRAINING_GROUND
+    { gGanonsCastleDoorDL, gDoorMetalBarsDL, 130, 12, 20, 15 },        // DOORSHUTTER_GFX_GANONS_CASTLE
+    { object_ouke_haka_DL_0000C0, gDoorMetalBarsDL, 130, 12, 20, 15 }, // DOORSHUTTER_GFX_ROYAL_FAMILYS_TOMB
 };
 
-static s8 D_80998224[] = {
-    -1, -1, -1, -1, 0, 6, 1, -1, 0, -1, -1, -1,
+static s8 sTypeStyles[] = {
+    DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER
+    DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER_FRONT_CLEAR
+    DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER_FRONT_SWITCH
+    DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER_BACK_LOCKED
+    DOORSHUTTER_STYLE_PHANTOM_GANON, // SHUTTER_PG_BARS
+    DOORSHUTTER_STYLE_BOSS_DOOR,     // SHUTTER_BOSS
+    DOORSHUTTER_STYLE_GOHMA_BLOCK,   // SHUTTER_GOHMA_BLOCK
+    DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER_FRONT_SWITCH_BACK_CLEAR
+    DOORSHUTTER_STYLE_PHANTOM_GANON, // SHUTTER_8
+    DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER_9
+    DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER_A
+    DOORSHUTTER_STYLE_FROM_SCENE,    // SHUTTER_KEY_LOCKED
 };
 
 static InitChainEntry sInitChain[] = {
@@ -133,43 +282,54 @@ static InitChainEntry sInitChain[] = {
 typedef struct {
     s16 sceneNum;
     u8 index;
-} ShutterSceneInfo;
+} DoorShutterSceneInfo;
 
-static ShutterSceneInfo sSceneInfo[] = {
-    { SCENE_DEKU_TREE, 0x02 },
-    { SCENE_DODONGOS_CAVERN, 0x03 },
-    { SCENE_DODONGOS_CAVERN_BOSS, 0x03 },
-    { SCENE_JABU_JABU, 0x04 },
-    { SCENE_FOREST_TEMPLE, 0x05 },
-    { SCENE_FIRE_TEMPLE, 0x08 },
-    { SCENE_GANONS_TOWER, 0x09 },
-    { SCENE_GANONDORF_BOSS, 0x09 },
-    { SCENE_SPIRIT_TEMPLE, 0x0A },
-    { SCENE_SPIRIT_TEMPLE_BOSS, 0x0A },
-    { SCENE_WATER_TEMPLE, 0x0B },
-    { SCENE_SHADOW_TEMPLE, 0x0C },
-    { SCENE_BOTTOM_OF_THE_WELL, 0x0C },
-    { SCENE_ICE_CAVERN, 0x0D },
-    { SCENE_GERUDO_TRAINING_GROUND, 0x0E },
-    { SCENE_INSIDE_GANONS_CASTLE, 0x0F },
-    { SCENE_ROYAL_FAMILYS_TOMB, 0x10 },
-    { -1, 0x07 },
+static DoorShutterSceneInfo sSceneInfo[] = {
+    { SCENE_DEKU_TREE, DOORSHUTTER_STYLE_DEKU_TREE },
+    { SCENE_DODONGOS_CAVERN, DOORSHUTTER_STYLE_DODONGOS_CAVERN },
+    { SCENE_DODONGOS_CAVERN_BOSS, DOORSHUTTER_STYLE_DODONGOS_CAVERN },
+    { SCENE_JABU_JABU, DOORSHUTTER_STYLE_JABU_JABU },
+    { SCENE_FOREST_TEMPLE, DOORSHUTTER_STYLE_FOREST_TEMPLE },
+    { SCENE_FIRE_TEMPLE, DOORSHUTTER_STYLE_FIRE_TEMPLE },
+    { SCENE_GANONS_TOWER, DOORSHUTTER_STYLE_GANONS_TOWER },
+    { SCENE_GANONDORF_BOSS, DOORSHUTTER_STYLE_GANONS_TOWER },
+    { SCENE_SPIRIT_TEMPLE, DOORSHUTTER_STYLE_SPIRIT_TEMPLE },
+    { SCENE_SPIRIT_TEMPLE_BOSS, DOORSHUTTER_STYLE_SPIRIT_TEMPLE },
+    { SCENE_WATER_TEMPLE, DOORSHUTTER_STYLE_WATER_TEMPLE },
+    { SCENE_SHADOW_TEMPLE, DOORSHUTTER_STYLE_SHADOW_TEMPLE },
+    { SCENE_BOTTOM_OF_THE_WELL, DOORSHUTTER_STYLE_SHADOW_TEMPLE },
+    { SCENE_ICE_CAVERN, DOORSHUTTER_STYLE_ICE_CAVERN },
+    { SCENE_GERUDO_TRAINING_GROUND, DOORSHUTTER_STYLE_GERUDO_TRAINING_GROUND },
+    { SCENE_INSIDE_GANONS_CASTLE, DOORSHUTTER_STYLE_GANONS_CASTLE },
+    { SCENE_ROYAL_FAMILYS_TOMB, DOORSHUTTER_STYLE_ROYAL_FAMILYS_TOMB },
+    { -1, DOORSHUTTER_STYLE_GENERIC },
 };
+
+typedef enum DoorShutterBossDoorTexIndex {
+    /* 0 */ DOORSHUTTER_BOSSDOORTEX_0,
+    /* 1 */ DOORSHUTTER_BOSSDOORTEX_FIRE,
+    /* 2 */ DOORSHUTTER_BOSSDOORTEX_WATER,
+    /* 3 */ DOORSHUTTER_BOSSDOORTEX_SHADOW,
+    /* 4 */ DOORSHUTTER_BOSSDOORTEX_GANON,
+    /* 5 */ DOORSHUTTER_BOSSDOORTEX_FOREST,
+    /* 6 */ DOORSHUTTER_BOSSDOORTEX_SPIRIT
+} DoorShutterBossDoorTexIndex;
 
 typedef struct {
     s16 dungeonScene;
     s16 bossScene;
     u8 index;
-} BossDoorInfo;
+    s16 bossSpawn; // rando addition for boss door textures matches boss
+} DoorShutterBossDoorInfo;
 
-static BossDoorInfo D_80998288[] = {
-    { SCENE_FIRE_TEMPLE, SCENE_FIRE_TEMPLE_BOSS, 0x01 },
-    { SCENE_WATER_TEMPLE, SCENE_WATER_TEMPLE_BOSS, 0x02 },
-    { SCENE_SHADOW_TEMPLE, SCENE_SHADOW_TEMPLE_BOSS, 0x03 },
-    { SCENE_GANONS_TOWER, SCENE_GANONDORF_BOSS, 0x04 },
-    { SCENE_FOREST_TEMPLE, SCENE_FOREST_TEMPLE_BOSS, 0x05 },
-    { SCENE_SPIRIT_TEMPLE, SCENE_SPIRIT_TEMPLE_BOSS, 0x06 },
-    { -1, -1, 0x00 },
+static DoorShutterBossDoorInfo sBossDoorInfo[] = {
+    { SCENE_FIRE_TEMPLE, SCENE_FIRE_TEMPLE_BOSS, DOORSHUTTER_BOSSDOORTEX_FIRE, ENTR_FIRE_TEMPLE_BOSS_ENTRANCE },
+    { SCENE_WATER_TEMPLE, SCENE_WATER_TEMPLE_BOSS, DOORSHUTTER_BOSSDOORTEX_WATER, ENTR_WATER_TEMPLE_BOSS_ENTRANCE },
+    { SCENE_SHADOW_TEMPLE, SCENE_SHADOW_TEMPLE_BOSS, DOORSHUTTER_BOSSDOORTEX_SHADOW, ENTR_SHADOW_TEMPLE_BOSS_ENTRANCE },
+    { SCENE_GANONS_TOWER, SCENE_GANONDORF_BOSS, DOORSHUTTER_BOSSDOORTEX_GANON, -1 }, // unknown atm
+    { SCENE_FOREST_TEMPLE, SCENE_FOREST_TEMPLE_BOSS, DOORSHUTTER_BOSSDOORTEX_FOREST, ENTR_FOREST_TEMPLE_BOSS_ENTRANCE },
+    { SCENE_SPIRIT_TEMPLE, SCENE_SPIRIT_TEMPLE_BOSS, DOORSHUTTER_BOSSDOORTEX_SPIRIT, ENTR_SPIRIT_TEMPLE_BOSS_ENTRANCE },
+    { -1, -1, DOORSHUTTER_BOSSDOORTEX_0, -1 },
 };
 
 static Gfx* sJabuDoorDLists[] = {
@@ -177,21 +337,42 @@ static Gfx* sJabuDoorDLists[] = {
     gJabuDoorSection5DL, gJabuDoorSection4DL, gJabuDoorSection3DL, gJabuDoorSection2DL,
 };
 
-static void* D_809982D4[] = {
-    gBossDoorDefaultTex,      gBossDoorFireTex,   gBossDoorWaterTex,  gBossDoorShadowTex,
-    gBossDoorGanonsCastleTex, gBossDoorForestTex, gBossDoorSpiritTex,
+static void* sBossDoorTextures[] = {
+    gBossDoorDefaultTex,      // DOORSHUTTER_BOSSDOORTEX_0
+    gBossDoorFireTex,         // DOORSHUTTER_BOSSDOORTEX_FIRE
+    gBossDoorWaterTex,        // DOORSHUTTER_BOSSDOORTEX_WATER
+    gBossDoorShadowTex,       // DOORSHUTTER_BOSSDOORTEX_SHADOW
+    gBossDoorGanonsCastleTex, // DOORSHUTTER_BOSSDOORTEX_GANON
+    gBossDoorForestTex,       // DOORSHUTTER_BOSSDOORTEX_FOREST
+    gBossDoorSpiritTex,       // DOORSHUTTER_BOSSDOORTEX_SPIRIT
 };
+
+s16 GetTexIndexFromEntrance(EntranceIndex entrance) {
+    DoorShutterBossDoorInfo* bossDoorInfo;
+    s32 i;
+
+    if (entrance == ENTR_DEKU_TREE_BOSS_DOOR || entrance == ENTR_DODONGOS_CAVERN_BOSS_DOOR ||
+        entrance == ENTR_JABU_JABU_BOSS_DOOR) {
+        return DOORSHUTTER_BOSSDOORTEX_0;
+    }
+
+    for (bossDoorInfo = &sBossDoorInfo[0], i = 0; i < ARRAY_COUNT(sBossDoorInfo) - 1; i++, bossDoorInfo++) {
+        if (bossDoorInfo->bossSpawn == entrance)
+            return bossDoorInfo->index;
+    }
+    return DOORSHUTTER_BOSSDOORTEX_0; // use default door texture if not found
+}
 
 void DoorShutter_SetupAction(DoorShutter* this, DoorShutterActionFunc actionFunc) {
     this->actionFunc = actionFunc;
-    this->unk_16F = 0;
+    this->actionTimer = 0;
 }
 
 s32 DoorShutter_SetupDoor(DoorShutter* this, PlayState* play) {
     TransitionActorEntry* transitionEntry = &play->transiActorCtx.list[(u16)this->dyna.actor.params >> 0xA];
     s8 frontRoom = transitionEntry->sides[0].room;
     s32 doorType = this->doorType;
-    ShutterObjectInfo* temp_t0 = &sObjectInfo[this->unk_16B];
+    DoorShutterStyleInfo* temp_t0 = &sStyleInfo[this->styleType];
 
     if (doorType != SHUTTER_KEY_LOCKED) {
         if (frontRoom == transitionEntry->sides[1].room) {
@@ -207,18 +388,18 @@ s32 DoorShutter_SetupDoor(DoorShutter* this, PlayState* play) {
             }
         }
     }
-    this->unk_16C = (doorType == SHUTTER) ? temp_t0->index1 : temp_t0->index2;
+    this->gfxType = (doorType == SHUTTER) ? temp_t0->index1 : temp_t0->index2;
 
     if (doorType == SHUTTER_FRONT_CLEAR) {
         if (!Flags_GetClear(play, this->dyna.actor.room)) {
             DoorShutter_SetupAction(this, func_80996A54);
-            this->unk_170 = 1.0f;
+            this->barsClosedAmount = 1.0f;
             return true;
         }
     } else if (doorType == SHUTTER_FRONT_SWITCH || doorType == SHUTTER_FRONT_SWITCH_BACK_CLEAR) {
         if (!Flags_GetSwitch(play, this->dyna.actor.params & 0x3F)) {
             DoorShutter_SetupAction(this, func_80996EE8);
-            this->unk_170 = 1.0f;
+            this->barsClosedAmount = 1.0f;
             return true;
         }
         DoorShutter_SetupAction(this, func_80996F98);
@@ -234,7 +415,7 @@ s32 DoorShutter_SetupDoor(DoorShutter* this, PlayState* play) {
 void DoorShutter_Init(Actor* thisx, PlayState* play2) {
     DoorShutter* this = (DoorShutter*)thisx;
     PlayState* play = play2;
-    s32 phi_a3;
+    s32 styleType;
     s32 pad;
     s32 objectIndex;
     s32 i;
@@ -243,43 +424,50 @@ void DoorShutter_Init(Actor* thisx, PlayState* play2) {
     this->dyna.actor.home.pos.z = this->dyna.actor.shape.yOffset;
     DynaPolyActor_Init(&this->dyna, DPM_UNK);
     this->doorType = (this->dyna.actor.params >> 6) & 0xF;
-    phi_a3 = D_80998224[this->doorType];
-    if (phi_a3 < 0) {
-        ShutterSceneInfo* phi_v1;
+    styleType = sTypeStyles[this->doorType];
+    if (styleType < 0) {
+        DoorShutterSceneInfo* sceneInfo;
 
-        for (phi_v1 = &sSceneInfo[0], i = 0; i < ARRAY_COUNT(sSceneInfo) - 1; i++, phi_v1++) {
-            if (play->sceneNum == phi_v1->sceneNum) {
+        for (sceneInfo = &sSceneInfo[0], i = 0; i < ARRAY_COUNT(sSceneInfo) - 1; i++, sceneInfo++) {
+            if (play->sceneNum == sceneInfo->sceneNum) {
                 break;
             }
         }
-        phi_a3 = phi_v1->index;
-    } else if (phi_a3 == 6) {
-        BossDoorInfo* phi_v1_2;
+        styleType = sceneInfo->index;
+    } else if (styleType == DOORSHUTTER_STYLE_BOSS_DOOR) {
+        DoorShutterBossDoorInfo* bossDoorInfo;
 
-        for (phi_v1_2 = &D_80998288[0], i = 0; i < ARRAY_COUNT(D_80998288) - 1; i++, phi_v1_2++) {
-            if (play->sceneNum == phi_v1_2->dungeonScene || play->sceneNum == phi_v1_2->bossScene) {
+        for (bossDoorInfo = &sBossDoorInfo[0], i = 0; i < ARRAY_COUNT(sBossDoorInfo) - 1; i++, bossDoorInfo++) {
+            if (play->sceneNum == bossDoorInfo->dungeonScene || play->sceneNum == bossDoorInfo->bossScene) {
                 break;
             }
         }
-        this->unk_168 = phi_v1_2->index;
-    } else {
+
+        if (CVarGetInteger(CVAR_RANDOMIZER_ENHANCEMENT("BossDoorTexMatchesBoss"), 0)) {
+            EntranceIndex overrideEntranceIndex = Entrance_GetOverride(bossDoorInfo->bossSpawn);
+            this->bossDoorTexIndex = GetTexIndexFromEntrance(overrideEntranceIndex);
+        } else {
+            this->bossDoorTexIndex = bossDoorInfo->index;
+        }
+
+    } else { // DOORSHUTTER_STYLE_PHANTOM_GANON, DOORSHUTTER_STYLE_GOHMA_BLOCK
         this->dyna.actor.room = -1;
     }
-    if (this->requiredObjBankIndex = objectIndex = Object_GetIndex(&play->objectCtx, sObjectInfo[phi_a3].objectId),
+    if (this->requiredObjBankIndex = objectIndex = Object_GetIndex(&play->objectCtx, sStyleInfo[styleType].objectId),
         (s8)objectIndex < 0) {
         Actor_Kill(&this->dyna.actor);
         return;
     }
     DoorShutter_SetupAction(this, DoorShutter_SetupType);
-    this->unk_16B = phi_a3;
+    this->styleType = styleType;
     if (this->doorType == SHUTTER_KEY_LOCKED || this->doorType == SHUTTER_BOSS) {
         if (GameInteractor_Should(VB_LOCK_BOSS_DOOR, !Flags_GetSwitch(play, this->dyna.actor.params & 0x3F), this)) {
-            this->unk_16E = 10;
+            this->unlockTimer = 10;
         }
         Actor_SetFocus(&this->dyna.actor, 60.0f);
-    } else if (phi_a3 == 4) {
+    } else if (styleType == 4) {
         Actor_SetScale(&this->dyna.actor, 0.1f);
-        this->unk_166 = 100;
+        this->jabuDoorClosedAmount = 100;
         this->dyna.actor.uncullZoneScale = 200.0f;
         Actor_SetFocus(&this->dyna.actor, 0.0f);
     } else {
@@ -306,7 +494,7 @@ void DoorShutter_SetupType(DoorShutter* this, PlayState* play) {
             CollisionHeader* colHeader = NULL;
 
             Actor_SetObjectDependency(play, &this->dyna.actor);
-            this->unk_16C = sObjectInfo[this->unk_16B].index1;
+            this->gfxType = sStyleInfo[this->styleType].index1;
             CollisionHeader_GetVirtual((this->doorType == SHUTTER_GOHMA_BLOCK) ? &gGohmaDoorCol : &gPhantomGanonBarsCol,
                                        &colHeader);
             this->dyna.bgId = DynaPoly_SetBgActor(play, &play->colCtx.dyna, &this->dyna.actor, colHeader);
@@ -317,7 +505,7 @@ void DoorShutter_SetupType(DoorShutter* this, PlayState* play) {
                 DoorShutter_SetupAction(this, func_809975C0);
             } else {
                 DoorShutter_SetupAction(this, func_80997744);
-                this->unk_164 = 7;
+                this->isActive = 7;
             }
         } else {
             DoorShutter_SetupDoor(this, play);
@@ -346,8 +534,8 @@ s32 func_809968D4(DoorShutter* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (!Player_InCsMode(play)) {
-        ShutterInfo* temp_v1 = &sShutterInfo[this->unk_16C];
-        f32 temp_f2 = func_80996840(play, this, (this->unk_16C != 3) ? 0.0f : 80.0f, temp_v1->e, temp_v1->f);
+        DoorShutterGfxInfo* temp_v1 = &sGfxInfo[this->gfxType];
+        f32 temp_f2 = func_80996840(play, this, (this->gfxType != 3) ? 0.0f : 80.0f, temp_v1->rangeSides, temp_v1->rangeY);
 
         if (fabsf(temp_f2) < 50.0f) {
             s16 phi_v0 = player->actor.shape.rot.y - this->dyna.actor.shape.rot.y;
@@ -370,7 +558,7 @@ void func_80996A54(DoorShutter* this, PlayState* play) {
         if (GameInteractor_Should(VB_PLAY_ONEPOINT_ACTOR_CS, true, this)) {
             OnePointCutscene_Attention(play, &this->dyna.actor);
             OnePointCutscene_Attention(play, &GET_PLAYER(play)->actor);
-            this->unk_16F = -100;
+            this->actionTimer = -100;
         }
     } else if (func_809968D4(this, play) != 0) {
         Player* player = GET_PLAYER(play);
@@ -383,10 +571,10 @@ void func_80996B00(DoorShutter* this, PlayState* play) {
 }
 
 void func_80996B0C(DoorShutter* this, PlayState* play) {
-    if (this->unk_164 != 0) {
+    if (this->isActive != 0) {
         DoorShutter_SetupAction(this, func_80997004);
         this->dyna.actor.velocity.y = 0.0f;
-        if (this->unk_16E != 0) {
+        if (this->unlockTimer != 0) {
             Flags_SetSwitch(play, this->dyna.actor.params & 0x3F);
             if (this->doorType != SHUTTER_BOSS) {
                 gSaveContext.inventory.dungeonKeys[gSaveContext.mapIndex]--;
@@ -401,7 +589,7 @@ void func_80996B0C(DoorShutter* this, PlayState* play) {
         if (doorDirection != 0) {
             Player* player = GET_PLAYER(play);
 
-            if (this->unk_16E != 0) {
+            if (this->unlockTimer != 0) {
                 if (this->doorType == SHUTTER_BOSS) {
                     if (!CHECK_DUNGEON_ITEM(DUNGEON_KEY_BOSS, gSaveContext.mapIndex)) {
                         player->naviTextId = -0x204;
@@ -423,22 +611,22 @@ void func_80996B0C(DoorShutter* this, PlayState* play) {
 void func_80996C60(DoorShutter* this, PlayState* play) {
     if (this->dyna.actor.category == ACTORCAT_DOOR) {
         Player* player = GET_PLAYER(play);
-        s32 sp38 = this->unk_16C;
+        s32 sp38 = this->gfxType;
         s32 sp34 = 0xF;
 
         if (DoorShutter_SetupDoor(this, play)) {
             sp34 = 0x20;
         }
         DoorShutter_SetupAction(this, func_80997004);
-        this->unk_16C = sp38;
-        this->unk_170 = 0.0f;
+        this->gfxType = sp38;
+        this->barsClosedAmount = 0.0f;
         Camera_ChangeDoorCam(play->cameraPtrs[MAIN_CAM], &this->dyna.actor, player->cv.slidingDoorBgCamIndex, 0.0f, 12,
                              sp34, 10);
     }
 }
 
 s32 func_80996D14(DoorShutter* this, PlayState* play) {
-    if (this->unk_16C != 3) {
+    if (this->gfxType != 3) {
         if (this->dyna.actor.velocity.y == 0.0f) {
             Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_SLIDE_DOOR_OPEN);
             func_80996C60(this, play);
@@ -449,11 +637,11 @@ s32 func_80996D14(DoorShutter* this, PlayState* play) {
             return true;
         }
     } else {
-        if (this->unk_166 == 100) {
+        if (this->jabuDoorClosedAmount == 100) {
             Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_BUYODOOR_OPEN);
             func_80996C60(this, play);
         }
-        if (Math_StepToS(&this->unk_166, 0, 10)) {
+        if (Math_StepToS(&this->jabuDoorClosedAmount, 0, 10)) {
             return true;
         }
     }
@@ -461,8 +649,8 @@ s32 func_80996D14(DoorShutter* this, PlayState* play) {
 }
 
 s32 func_80996E08(DoorShutter* this, PlayState* play, f32 arg2) {
-    if (this->unk_170 == 1.0f - arg2) {
-        if (this->unk_16C != 3) {
+    if (this->barsClosedAmount == 1.0f - arg2) {
+        if (this->gfxType != 3) {
             if (arg2 == 1.0f) {
                 Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_METALDOOR_CLOSE);
             } else {
@@ -476,7 +664,7 @@ s32 func_80996E08(DoorShutter* this, PlayState* play, f32 arg2) {
             }
         }
     }
-    if (Math_StepToF(&this->unk_170, arg2, 0.2f)) {
+    if (Math_StepToF(&this->barsClosedAmount, arg2, 0.2f)) {
         return true;
     }
     return false;
@@ -488,7 +676,7 @@ void func_80996EE8(DoorShutter* this, PlayState* play) {
             DoorShutter_SetupAction(this, func_80997150);
             if (GameInteractor_Should(VB_PLAY_ONEPOINT_ACTOR_CS, true, this)) {
                 OnePointCutscene_Attention(play, &this->dyna.actor);
-                this->unk_16F = -100;
+                this->actionTimer = -100;
             }
         } else if (func_809968D4(this, play)) {
             Player* player = GET_PLAYER(play);
@@ -499,7 +687,7 @@ void func_80996EE8(DoorShutter* this, PlayState* play) {
 }
 
 void func_80996F98(DoorShutter* this, PlayState* play) {
-    if (this->unk_164 == 0 && !Flags_GetSwitch(play, this->dyna.actor.params & 0x3F)) {
+    if (this->isActive == 0 && !Flags_GetSwitch(play, this->dyna.actor.params & 0x3F)) {
         DoorShutter_SetupAction(this, func_80996EE8);
     } else {
         func_80996B0C(this, play);
@@ -507,12 +695,12 @@ void func_80996F98(DoorShutter* this, PlayState* play) {
 }
 
 void func_80997004(DoorShutter* this, PlayState* play) {
-    if (DECR(this->unk_16E) == 0 && play->roomCtx.status == 0 && func_80996D14(this, play) != 0) {
+    if (DECR(this->unlockTimer) == 0 && play->roomCtx.status == 0 && func_80996D14(this, play) != 0) {
         if (((this->doorType == SHUTTER_BOSS) ? 20.0f : 50.0f) < this->dyna.actor.xzDistToPlayer) {
             if (DoorShutter_SetupDoor(this, play)) {
                 this->dyna.actor.velocity.y = 30.0f;
             }
-            if (this->unk_16C != 3) {
+            if (this->gfxType != 3) {
                 Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_SLIDE_DOOR_CLOSE);
                 DoorShutter_SetupAction(this, func_809973E8);
             } else {
@@ -528,16 +716,16 @@ void func_80997004(DoorShutter* this, PlayState* play) {
 }
 
 void func_80997150(DoorShutter* this, PlayState* play) {
-    if (this->unk_16F != 0) {
-        if (this->unk_16F < 0) {
+    if (this->actionTimer != 0) {
+        if (this->actionTimer < 0) {
             if (play->state.frames % 2 != 0) {
-                this->unk_16F++;
+                this->actionTimer++;
             }
-            if (this->dyna.actor.category == func_8005B198() || this->unk_16F == 0) {
-                this->unk_16F = 5;
+            if (this->dyna.actor.category == func_8005B198() || this->actionTimer == 0) {
+                this->actionTimer = 5;
             }
         } else {
-            this->unk_16F--;
+            this->actionTimer--;
         }
     } else if (func_80996E08(this, play, 0.0f)) {
         if (!(this->doorType == SHUTTER || this->doorType == SHUTTER_FRONT_CLEAR)) {
@@ -569,7 +757,7 @@ void func_80997220(DoorShutter* this, PlayState* play) {
         func_80097534(play, &play->roomCtx);
         Play_SetupRespawnPoint(play, RESPAWN_MODE_DOWN, 0x0EFF);
     }
-    this->unk_164 = 0;
+    this->isActive = 0;
     this->dyna.actor.velocity.y = 0.0f;
     if (DoorShutter_SetupDoor(this, play) && !(player->stateFlags1 & PLAYER_STATE1_CARRYING_ACTOR)) {
         DoorShutter_SetupAction(this, func_80997568);
@@ -600,13 +788,13 @@ void func_809973E8(DoorShutter* this, PlayState* play) {
 }
 
 void func_80997528(DoorShutter* this, PlayState* play) {
-    if (Math_StepToS(&this->unk_166, 0x64, 0xA)) {
+    if (Math_StepToS(&this->jabuDoorClosedAmount, 0x64, 0xA)) {
         func_80997220(this, play);
     }
 }
 
 void func_80997568(DoorShutter* this, PlayState* play) {
-    if (this->unk_16F++ > 30) {
+    if (this->actionTimer++ > 30) {
         Player_SetCsActionWithHaltedActors(play, NULL, 7);
         DoorShutter_SetupDoor(this, play);
     }
@@ -620,7 +808,7 @@ void func_809975C0(DoorShutter* this, PlayState* play) {
         if (!Flags_GetEventChkInf(EVENTCHKINF_BEGAN_GOHMA_BATTLE)) {
             BossGoma* parent = (BossGoma*)this->dyna.actor.parent;
 
-            this->unk_164 = 10;
+            this->isActive = 10;
             Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_STONE_BOUND);
             func_8099803C(play, 2, 10, parent->subCameraId);
             Actor_SpawnFloorDustRing(play, &this->dyna.actor, &this->dyna.actor.world.pos, 70.0f, 20, 8.0f, 500, 10,
@@ -632,10 +820,10 @@ void func_809975C0(DoorShutter* this, PlayState* play) {
 void func_809976B8(DoorShutter* this, PlayState* play) {
     f32 mult;
 
-    if (this->unk_164 != 0) {
-        this->unk_164--;
-        mult = sinf(this->unk_164 * 250.0f / 100.0f);
-        this->dyna.actor.shape.yOffset = this->unk_164 * 3.0f / 10.0f * mult;
+    if (this->isActive != 0) {
+        this->isActive--;
+        mult = sinf(this->isActive * 250.0f / 100.0f);
+        this->dyna.actor.shape.yOffset = this->isActive * 3.0f / 10.0f * mult;
     }
 }
 
@@ -643,10 +831,10 @@ void func_80997744(DoorShutter* this, PlayState* play) {
     f32 phi_f0;
 
     osSyncPrintf("FHG SAKU START !!\n");
-    if (this->unk_164 != 0) {
-        this->unk_164--;
+    if (this->isActive != 0) {
+        this->isActive--;
     }
-    phi_f0 = (this->unk_164 % 2 != 0) ? -3.0f : 0.0f;
+    phi_f0 = (this->isActive % 2 != 0) ? -3.0f : 0.0f;
     Math_SmoothStepToF(&this->dyna.actor.world.pos.y, -34.0f + phi_f0, 1.0f, 20.0f, 0.0f);
     osSyncPrintf("FHG SAKU END !!\n");
 }
@@ -665,7 +853,7 @@ void DoorShutter_Update(Actor* thisx, PlayState* play) {
 Gfx* func_80997838(PlayState* play, DoorShutter* this, Gfx* p) {
     MtxF mtx;
     f32 angle = 0.0f;
-    f32 yScale = this->unk_166 * 0.01f;
+    f32 yScale = this->jabuDoorClosedAmount * 0.01f;
     s32 i;
 
     Matrix_Get(&mtx);
@@ -678,7 +866,7 @@ Gfx* func_80997838(PlayState* play, DoorShutter* this, Gfx* p) {
         } else {
             Matrix_Translate(0.0f, 989.94f, 0.0f, MTXMODE_APPLY);
         }
-        if (this->unk_166 != 100) {
+        if (this->jabuDoorClosedAmount != 100) {
             Matrix_Scale(1.0f, yScale, 1.0f, MTXMODE_APPLY);
         }
         gSPMatrix(p++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
@@ -722,29 +910,29 @@ void DoorShutter_Draw(Actor* thisx, PlayState* play) {
     //! the init vars for the actor, and only set draw after initialization is complete.
 
     if (this->dyna.actor.objBankIndex == this->requiredObjBankIndex &&
-        (this->unk_16B == 0 || func_80997A34(this, play) != 0)) {
+        (this->styleType == 0 || func_80997A34(this, play) != 0)) {
         s32 pad[2];
-        ShutterInfo* sp70 = &sShutterInfo[this->unk_16C];
+        DoorShutterGfxInfo* sp70 = &sGfxInfo[this->gfxType];
 
         OPEN_DISPS(play->state.gfxCtx);
 
         Gfx_SetupDL_25Opa(play->state.gfxCtx);
 
-        if (this->unk_16C == 3) {
+        if (this->gfxType == 3) {
             POLY_OPA_DISP = func_80997838(play, this, POLY_OPA_DISP);
-            if (this->unk_170 != 0.0f) {
-                f32 sp58 = (this->unk_166 * 0.01f) * this->unk_170;
+            if (this->barsClosedAmount != 0.0f) {
+                f32 sp58 = (this->jabuDoorClosedAmount * 0.01f) * this->barsClosedAmount;
 
                 Gfx_SetupDL_25Opa(play->state.gfxCtx);
                 gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255.0f * sp58);
-                Matrix_Translate(0, 0, sp70->translateZ, MTXMODE_APPLY);
+                Matrix_Translate(0, 0, sp70->barsOffsetZ, MTXMODE_APPLY);
                 Matrix_Scale(sp58, sp58, sp58, MTXMODE_APPLY);
                 gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
                           G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-                gSPDisplayList(POLY_OPA_DISP++, sp70->b);
+                gSPDisplayList(POLY_OPA_DISP++, sp70->barsDL);
             }
         } else {
-            if (sp70->b != NULL) {
+            if (sp70->barsDL != NULL) {
                 TransitionActorEntry* transitionEntry = &play->transiActorCtx.list[(u16)this->dyna.actor.params >> 0xA];
 
                 if (play->roomCtx.prevRoom.num >= 0 ||
@@ -758,24 +946,24 @@ void DoorShutter_Draw(Actor* thisx, PlayState* play) {
                     Matrix_RotateY(M_PI, MTXMODE_APPLY);
                 }
             } else if (this->doorType == SHUTTER_BOSS) {
-                gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(D_809982D4[this->unk_168]));
+                gSPSegment(POLY_OPA_DISP++, 0x08, SEGMENTED_TO_VIRTUAL(sBossDoorTextures[this->bossDoorTexIndex]));
             }
             gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-            gSPDisplayList(POLY_OPA_DISP++, sp70->a);
-            if (this->unk_170 != 0.0f && sp70->b != NULL) {
-                Matrix_Translate(0, sp70->c * (1.0f - this->unk_170), sp70->translateZ, MTXMODE_APPLY);
+            gSPDisplayList(POLY_OPA_DISP++, sp70->doorDL);
+            if (this->barsClosedAmount != 0.0f && sp70->barsDL != NULL) {
+                Matrix_Translate(0, sp70->barsOpenOffsetY * (1.0f - this->barsClosedAmount), sp70->barsOffsetZ, MTXMODE_APPLY);
                 gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx),
                           G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-                gSPDisplayList(POLY_OPA_DISP++, sp70->b);
+                gSPDisplayList(POLY_OPA_DISP++, sp70->barsDL);
             }
         }
 
-        if (this->unk_16E != 0) {
+        if (this->unlockTimer != 0) {
             Matrix_Scale(0.01f, 0.01f, 0.025f, MTXMODE_APPLY);
-            Actor_DrawDoorLock(play, this->unk_16E,
+            Actor_DrawDoorLock(play, this->unlockTimer,
                                (this->doorType == SHUTTER_BOSS)
                                    ? DOORLOCK_BOSS
-                                   : ((this->unk_16C == 6) ? DOORLOCK_NORMAL_SPIRIT : DOORLOCK_NORMAL));
+                                   : ((this->gfxType == 6) ? DOORLOCK_NORMAL_SPIRIT : DOORLOCK_NORMAL));
         }
 
         CLOSE_DISPS(play->state.gfxCtx);

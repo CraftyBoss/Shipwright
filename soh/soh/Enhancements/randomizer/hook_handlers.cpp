@@ -2185,7 +2185,7 @@ void RandomizerOnActorUpdateHandler(void* refActor) {
         } else if (actor->id == ACTOR_DOOR_SHUTTER) {
             DoorShutter* shutterDoor = reinterpret_cast<DoorShutter*>(actor);
             if (shutterDoor->doorType == SHUTTER_KEY_LOCKED) {
-                shutterDoor->unk_16E = 0;
+                shutterDoor->unlockTimer = 0;
             }
         } else if (actor->id == ACTOR_DOOR_GERUDO) {
             DoorGerudo* gerudoDoor = (DoorGerudo*)actor;

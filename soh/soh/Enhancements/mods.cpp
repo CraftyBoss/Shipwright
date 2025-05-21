@@ -196,7 +196,10 @@ void UpdatePermanentHeartLossState() {
     if (!GameInteractor::IsSaveLoaded())
         return;
 
-    if (!CVarGetInteger(CVAR_ENHANCEMENT("PermanentHeartLoss"), 0) && hasAffectedHealth) {
+    bool isRestoreOriginalHealth = !CVarGetInteger(CVAR_ENHANCEMENT("PermanentHeartLoss"), 0) ||
+                                   !CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0);
+
+    if (isRestoreOriginalHealth && hasAffectedHealth) {
         uint8_t heartContainers = gSaveContext.ship.stats.heartContainers; // each worth 16 health
         uint8_t heartPieces = gSaveContext.ship.stats.heartPieces; // each worth 4 health, but only in groups of 4
         uint8_t startingHealth =
@@ -226,6 +229,69 @@ void RegisterPermanentHeartLoss() {
         }
     });
 };
+
+static bool isNextHitProtected = false;
+static bool isRespawnFromHit = false;
+static bool isVoidDamage = false;
+static int startRespawnTimer = 0;
+void RegisterGloomMode() {
+
+    GameInteractor::Instance->RegisterGameHook<GameInteractor::OnLoadGame>([](int16_t fileNum) {
+        CVarSetInteger(CVAR_ENHANCEMENT("GloomModeDefenseProtection"), isNextHitProtected);
+    });
+
+    GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerHealthChange>([](int amount) {
+        if (!CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0) || !GameInteractor::IsSaveLoaded())
+            return;
+
+        if (amount < 0) {
+            if (gSaveContext.isDoubleDefenseAcquired) {
+                isNextHitProtected = !isNextHitProtected;
+                CVarSetInteger(CVAR_ENHANCEMENT("GloomModeDefenseProtection"), isNextHitProtected);
+
+                if (isNextHitProtected) {
+                    gSaveContext.health = gSaveContext.healthCapacity;
+                    return;
+                }
+            }
+
+            gSaveContext.healthCapacity -= 16;
+            gSaveContext.health = gSaveContext.healthCapacity;
+
+            if (!isVoidDamage)
+                startRespawnTimer = 3;
+            else
+                isVoidDamage = false;
+        }
+    });
+
+    GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>([]() {
+        if (!CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0) || !GameInteractor::IsSaveLoaded())
+            return;
+
+        if (startRespawnTimer > 0) {
+            startRespawnTimer--;
+
+            if (startRespawnTimer == 0) {
+                Audio_PlaySoundGeneral(NA_SE_OC_ABYSS, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
+                                       &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+                Play_TriggerVoidOut(gPlayState);
+
+                // prevent void out damage when reloading
+                isRespawnFromHit = true; 
+            }
+        }
+    });
+
+    REGISTER_VB_SHOULD(VB_INFLICT_VOID_DAMAGE, {
+        if (isRespawnFromHit) {
+            isRespawnFromHit = false;
+            *should = false;
+        } else {
+            isVoidDamage = true;
+        }
+    });
+}
 
 void RegisterDeleteFileOnDeath() {
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnGameFrameUpdate>([]() {
@@ -1077,6 +1143,7 @@ void InitMods() {
     RegisterRupeeDash();
     RegisterShadowTag();
     RegisterPermanentHeartLoss();
+    RegisterGloomMode();
     RegisterDeleteFileOnDeath();
     RegisterHyperBosses();
     UpdateHyperEnemiesState();

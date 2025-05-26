@@ -559,6 +559,9 @@ void DrawGameplayStatsCountsTab() {
         }
     }
     GameplayStatsRow("Damage Taken:", formatIntGameplayStat(gSaveContext.ship.stats.count[COUNT_DAMAGE_TAKEN]));
+    if (CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0)) {
+        GameplayStatsRow("Hits Taken:", formatIntGameplayStat(gSaveContext.ship.stats.count[COUNT_HITS_TAKEN]));
+    }
     GameplayStatsRow("Sword Swings:", formatIntGameplayStat(gSaveContext.ship.stats.count[COUNT_SWORD_SWINGS]));
     GameplayStatsRow("Steps Taken:", formatIntGameplayStat(gSaveContext.ship.stats.count[COUNT_STEPS]));
     // If using MM Bunny Hood enhancement, show how long it's been equipped (not counting pause time)

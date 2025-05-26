@@ -167,6 +167,7 @@ typedef enum {
     COUNT_SIDEHOPS,         // z_player.c
     COUNT_BACKFLIPS,        // z_player.c
     COUNT_TIME_BUNNY_HOOD,  // z_play.c
+    COUNT_HITS_TAKEN,       // gloom mode stat
 
     COUNT_MAX
 

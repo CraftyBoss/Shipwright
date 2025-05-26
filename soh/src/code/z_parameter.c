@@ -2318,14 +2318,16 @@ u8 Item_Give(PlayState* play, u8 item) {
         gSaveContext.ship.stats.heartPieces++;
         return Return_Item(item, MOD_NONE, ITEM_NONE);
     } else if (item == ITEM_HEART_CONTAINER) {
-        if (!CVarGetInteger(CVAR_ENHANCEMENT("HurtContainer"), 0)) {
-            gSaveContext.healthCapacity += 0x10;
-            gSaveContext.health += 0x10;
-        } else {
-            gSaveContext.healthCapacity -= 0x10;
-            gSaveContext.health -= 0x10;
+        if (!CVarGetInteger(CVAR_ENHANCEMENT("PreventNewHeartContainer"), 0)) {
+            if (!CVarGetInteger(CVAR_ENHANCEMENT("HurtContainer"), 0)) {
+                gSaveContext.healthCapacity += 0x10;
+                gSaveContext.health += 0x10;
+            } else {
+                gSaveContext.healthCapacity -= 0x10;
+                gSaveContext.health -= 0x10;
+            }
+            gSaveContext.ship.stats.heartContainers++;
         }
-        gSaveContext.ship.stats.heartContainers++;
         return Return_Item(item, MOD_NONE, ITEM_NONE);
     } else if (item == ITEM_HEART) {
         osSyncPrintf("回復ハート回復ハート回復ハート\n"); // "Recovery Heart"

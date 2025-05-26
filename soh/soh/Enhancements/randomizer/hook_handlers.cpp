@@ -380,8 +380,10 @@ void RandomizerOnItemReceiveHandler(GetItemEntry receivedItemEntry) {
         gSaveContext.healthAccumulator = 0x140; // Refill 20 hearts
         if ((s32)(gSaveContext.inventory.questItems & 0xF0000000) == 0x40000000) {
             gSaveContext.inventory.questItems ^= 0x40000000;
-            gSaveContext.healthCapacity += 0x10;
-            gSaveContext.health += 0x10;
+            if (!CVarGetInteger(CVAR_ENHANCEMENT("PreventNewHeartContainer"), 0)) {
+                gSaveContext.healthCapacity += 0x10;
+                gSaveContext.health += 0x10;
+            }
         }
     }
 

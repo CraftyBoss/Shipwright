@@ -766,8 +766,16 @@ void func_80AE4114(EnRd* this, PlayState* play) {
 
     if ((gSaveContext.sunsSongState != SUNSSONG_INACTIVE) && (this->actor.shape.rot.x == 0) && (this->unk_318 == 0) &&
         (this->unk_31B != 9) && (this->unk_31B != 10) && (this->unk_31B != 1)) {
-        func_80AE3DE4(this);
-        return;
+
+        if (CVarGetInteger(CVAR_ENHANCEMENT("OOTSunSongOnly"), 0)) {
+            if ((INV_CONTENT(ITEM_OCARINA_TIME) == ITEM_OCARINA_TIME)) {
+                func_80AE3DE4(this); // start stunned state
+                return;
+            }
+        } else {
+            func_80AE3DE4(this); 
+            return;
+        }
     }
 
     if (this->collider.base.acFlags & AC_HIT) {

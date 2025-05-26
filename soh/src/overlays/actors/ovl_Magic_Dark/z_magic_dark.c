@@ -91,6 +91,12 @@ void MagicDark_DiamondUpdate(Actor* thisx, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 pad;
     s16 nayrusLoveTimer = gSaveContext.nayrusLoveTimer;
+    s16 cutsceneTimeOffset = 7; // cutscene takes about 7 seconds to fully play out, so adjust the time supplied by the cheat
+    s16 timerEndSeconds = CVarGetInteger(CVAR_ENHANCEMENT("NayruLoveEndTime"), 60);
+    if (timerEndSeconds != 60) { // only apply offset if the time isnt 60 seconds
+        timerEndSeconds += cutsceneTimeOffset;
+    }
+
     s32 msgMode = play->msgCtx.msgMode;
 
     if ((msgMode == MSGMODE_OCARINA_CORRECT_PLAYBACK) || (msgMode == MSGMODE_SONG_PLAYED)) {
@@ -98,7 +104,7 @@ void MagicDark_DiamondUpdate(Actor* thisx, PlayState* play) {
         return;
     }
 
-    if (nayrusLoveTimer >= 1200) {
+    if (nayrusLoveTimer >= timerEndSeconds * 20) {
         player->invincibilityTimer = 0;
         gSaveContext.nayrusLoveTimer = 0;
         Actor_Kill(thisx);
@@ -121,12 +127,12 @@ void MagicDark_DiamondUpdate(Actor* thisx, PlayState* play) {
 
     phi_a0 = (this->timer < 20) ? (this->timer * 12) : 255;
 
-    if (nayrusLoveTimer >= 1180) {
+    if (nayrusLoveTimer >= CLAMP_MIN((timerEndSeconds - 1) * 20, 0)) {
         this->primAlpha = 15595 - (nayrusLoveTimer * 13);
         if (nayrusLoveTimer & 1) {
             this->primAlpha = this->primAlpha >> 1;
         }
-    } else if (nayrusLoveTimer >= 1100) {
+    } else if (nayrusLoveTimer >= CLAMP_MIN((timerEndSeconds - 5) * 20, 0)) {
         this->primAlpha = (u8)(nayrusLoveTimer << 7) + 127;
     } else {
         this->primAlpha = 255;
@@ -141,7 +147,7 @@ void MagicDark_DiamondUpdate(Actor* thisx, PlayState* play) {
     this->timer++;
     gSaveContext.nayrusLoveTimer = nayrusLoveTimer + 1;
 
-    if (nayrusLoveTimer < 1100) {
+    if (nayrusLoveTimer < (timerEndSeconds - 5) * 20) {
         func_8002F974(thisx, NA_SE_PL_MAGIC_SOUL_NORMAL - SFX_FLAG);
     } else {
         func_8002F974(thisx, NA_SE_PL_MAGIC_SOUL_FLASH - SFX_FLAG);

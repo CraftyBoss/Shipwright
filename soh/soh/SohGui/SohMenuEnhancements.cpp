@@ -1087,10 +1087,22 @@ void SohMenu::AddMenuEnhancements() {
         .Callback([](WidgetInfo& info) { UpdatePermanentHeartLossState(); })
         .Options(CheckboxOptions().Tooltip("Whenever you take damage, regardless of the amount, your Heart Containers will decrease by one."));
 
+    AddWidget(path, "Double Defense Protection", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("GloomModeDoubleHits"))
+        .Callback([](WidgetInfo& info) { UpdatePermanentHeartLossState(); })
+        .Options(CheckboxOptions()
+                     //.Disabled(CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0))
+                     .Tooltip(
+            "Double Defense will give you an extra hit before losing a heart in Gloom Mode."));
+
     AddWidget(path, "Damage while Shielding", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("ShieldingDealsDamage"))
         .Options(CheckboxOptions().Tooltip(
             "Blocking any attack with a shield will deal one heart of damage."));
+
+    AddWidget(path, "Prevent Additional Heart Containers", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("PreventNewHeartContainer"))
+        .Options(CheckboxOptions().Tooltip("Stops Heart Containers from being added to the player inventory when collecting the 4th heart piece or a heart container item."));
 
     AddWidget(path, "Damage Multiplier", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_ENHANCEMENT("DamageMult"))
@@ -1186,9 +1198,13 @@ void SohMenu::AddMenuEnhancements() {
 
     AddWidget(path, "One Time Use Nayru's Love", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("NayruLoveSingleUse"))
-        .Callback([](WidgetInfo& info) { UpdatePermanentHeartLossState(); })
         .Options(CheckboxOptions().Tooltip(
             "Using Nayru's Love will remove itself from your inventory."));
+
+    AddWidget(path, "Nayru's Love Timer Length", WIDGET_CVAR_SLIDER_INT)
+        .CVar(CVAR_ENHANCEMENT("NayruLoveEndTime"))
+        .Options(IntSliderOptions().Min(5).Max(120).DefaultValue(60).Format("%d Seconds").Tooltip(
+            "Adjusts the amount of time Nayru's Love will stay active once used."));
 
     path.column = SECTION_COLUMN_3;
     AddWidget(path, "Enemies", WIDGET_SEPARATOR_TEXT);
@@ -1209,6 +1225,10 @@ void SohMenu::AddMenuEnhancements() {
                      .DefaultValue(0)
                      .Format("%d seconds")
                      .Tooltip("The time between groups of Leevers spawning."));
+
+    AddWidget(path, "Sun's Song only freezes Redeads/Gibdos with OoT", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("OOTSunSongOnly"))
+        .Options(CheckboxOptions().Tooltip("Sun's Song will only effect Redeads/Gibdo's when the player has the Ocarina of Time."));
 
     // Minigames
     path.sidebarName = "Minigames";

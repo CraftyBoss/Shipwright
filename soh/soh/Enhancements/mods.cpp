@@ -233,9 +233,42 @@ void RegisterPermanentHeartLoss() {
 static bool isNextHitProtected = false;
 static bool isRespawnFromHit = false;
 static bool isVoidDamage = false;
-static int startRespawnTimer = 0;
-void RegisterGloomMode() {
+static const int invulnTimer = -60;
 
+void GloomModeVoidOut() {
+    Audio_PlaySoundGeneral(NA_SE_OC_ABYSS, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+                           &gSfxDefaultReverb);
+    Play_TriggerRespawn(gPlayState);
+    
+    // give player some i frames while voiding out
+    auto* player = GET_PLAYER(gPlayState);
+    if (player->invincibilityTimer > invulnTimer) {
+        player->invincibilityTimer = invulnTimer;
+    }
+    player->damageFlickerAnimCounter = 0;
+
+    // increment hit counter
+    gSaveContext.ship.stats.count[COUNT_HITS_TAKEN] += 1;
+
+    // prevent void out damage when reloading
+    isRespawnFromHit = true;
+}
+
+void VoidDamageBehaviour(GIVanillaBehavior _, bool* should, va_list _originalArgs) {
+    va_list args;
+    va_copy(args, _originalArgs);
+
+    if (isRespawnFromHit) {
+        isRespawnFromHit = false;
+        *should = false;
+    } else {
+        isVoidDamage = *should;
+    }
+
+    va_end(args);
+}
+
+void RegisterGloomMode() {
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnLoadGame>([](int16_t fileNum) {
         CVarSetInteger(CVAR_ENHANCEMENT("GloomModeDefenseProtection"), isNextHitProtected);
     });
@@ -245,12 +278,17 @@ void RegisterGloomMode() {
             return;
 
         if (amount < 0) {
-            if (gSaveContext.isDoubleDefenseAcquired) {
+            if (gSaveContext.isDoubleDefenseAcquired && CVarGetInteger(CVAR_ENHANCEMENT("GloomModeDoubleHits"), 0)) {
                 isNextHitProtected = !isNextHitProtected;
                 CVarSetInteger(CVAR_ENHANCEMENT("GloomModeDefenseProtection"), isNextHitProtected);
 
                 if (isNextHitProtected) {
                     gSaveContext.health = gSaveContext.healthCapacity;
+
+                    if (!isVoidDamage)
+                        GloomModeVoidOut();
+                    else
+                        isVoidDamage = false;
                     return;
                 }
             }
@@ -259,38 +297,13 @@ void RegisterGloomMode() {
             gSaveContext.health = gSaveContext.healthCapacity;
 
             if (!isVoidDamage)
-                startRespawnTimer = 3;
+                GloomModeVoidOut();
             else
                 isVoidDamage = false;
         }
     });
 
-    GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>([]() {
-        if (!CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0) || !GameInteractor::IsSaveLoaded())
-            return;
-
-        if (startRespawnTimer > 0) {
-            startRespawnTimer--;
-
-            if (startRespawnTimer == 0) {
-                Audio_PlaySoundGeneral(NA_SE_OC_ABYSS, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale,
-                                       &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-                Play_TriggerVoidOut(gPlayState);
-
-                // prevent void out damage when reloading
-                isRespawnFromHit = true; 
-            }
-        }
-    });
-
-    REGISTER_VB_SHOULD(VB_INFLICT_VOID_DAMAGE, {
-        if (isRespawnFromHit) {
-            isRespawnFromHit = false;
-            *should = false;
-        } else {
-            isVoidDamage = true;
-        }
-    });
+    GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnVanillaBehavior>(VB_INFLICT_VOID_DAMAGE, VoidDamageBehaviour);
 }
 
 void RegisterDeleteFileOnDeath() {

@@ -4496,6 +4496,14 @@ void Player_SetInvulnerability(Player* this, s32 timer) {
 }
 
 s32 func_80837B18_modified(PlayState* play, Player* this, s32 damage, u8 modified) {
+    // this needs to be ran before invincibility is checked so that nayrus love can be deactivated while active
+    if (damage < 0 && CVarGetInteger(CVAR_ENHANCEMENT("NayruLoveSingleUse"), 0) && gSaveContext.nayrusLoveTimer > 0) {
+        s16 endTime = (CVarGetInteger(CVAR_ENHANCEMENT("NayruLoveEndTime"), 60) - 5) * 20;
+
+        if (gSaveContext.nayrusLoveTimer < endTime)
+            gSaveContext.nayrusLoveTimer = endTime; // set timer to nearly max to end after taking a hit
+    }
+
     if ((this->invincibilityTimer != 0) || (this->actor.category != ACTORCAT_PLAYER)) {
         return 1;
     }

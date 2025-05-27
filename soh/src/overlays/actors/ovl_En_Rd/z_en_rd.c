@@ -826,8 +826,16 @@ void EnRd_Update(Actor* thisx, PlayState* play) {
 
     func_80AE4114(this, play);
 
-    if (gSaveContext.sunsSongState != SUNSSONG_INACTIVE && this->unk_318 == 0) {
-        gSaveContext.sunsSongState = SUNSSONG_INACTIVE;
+    if (CVarGetInteger(CVAR_ENHANCEMENT("OOTSunSongOnly"), 0)) {
+        if ((INV_CONTENT(ITEM_OCARINA_TIME) == ITEM_OCARINA_TIME)) {
+            if (gSaveContext.sunsSongState != SUNSSONG_INACTIVE && this->unk_318 == 0) {
+                gSaveContext.sunsSongState = SUNSSONG_INACTIVE;
+            }
+        }
+    } else {
+        if (gSaveContext.sunsSongState != SUNSSONG_INACTIVE && this->unk_318 == 0) {
+            gSaveContext.sunsSongState = SUNSSONG_INACTIVE;
+        }
     }
 
     if (this->unk_31C != 6 && ((this->unk_31B != 11) || (this->unk_31C != 14))) {

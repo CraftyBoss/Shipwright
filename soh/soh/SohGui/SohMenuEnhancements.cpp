@@ -841,6 +841,11 @@ void SohMenu::AddMenuEnhancements() {
         .Options(CheckboxOptions().Tooltip(
             "Make Anubis Fireballs do Fire damage when reflected back at them with the Mirror Shield."));
 
+    AddWidget(path, "MM Style Rolls", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("MMPlayerRollsFix"))
+        .Options(CheckboxOptions().Tooltip(
+            "Fixes the bug present with player rolling to make rolling block any incoming damage, which is fixed in MM."));
+
     AddWidget(path, "Item-related Fixes", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Fix Deku Nut Upgrade", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("DekuNutUpgradeFix"))
@@ -1032,6 +1037,10 @@ void SohMenu::AddMenuEnhancements() {
     AddWidget(path, "Health", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Permanent Heart Loss", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("PermanentHeartLoss"))
+        .PreFunc([](WidgetInfo& info) {
+            info.options->disabled = CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0);
+            info.options->disabledTooltip = "This option is disabled because \"Gloom Mode\" is turned on.";
+        })
         .Callback([](WidgetInfo& info) { UpdatePermanentHeartLossState(); })
         .Options(CheckboxOptions().Tooltip(
             "When you lose 4 quarters of a heart you will permanently lose that Heart Container.\n\n"
@@ -1039,14 +1048,21 @@ void SohMenu::AddMenuEnhancements() {
 
     AddWidget(path, "Gloom Mode", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("GloomMode"))
+        .PreFunc([](WidgetInfo& info) {
+            info.options->disabled = CVarGetInteger(CVAR_ENHANCEMENT("PermanentHeartLoss"), 0);
+            info.options->disabledTooltip = "This option is disabled because \"Permanent Heart Loss\" is turned on.";
+        })
         .Callback([](WidgetInfo& info) { UpdatePermanentHeartLossState(); })
         .Options(CheckboxOptions().Tooltip("Whenever you take damage, regardless of the amount, your Heart Containers will decrease by one."));
 
     AddWidget(path, "Double Defense Protection", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("GloomModeDoubleHits"))
-        .Callback([](WidgetInfo& info) { UpdatePermanentHeartLossState(); })
+        .PreFunc([](WidgetInfo& info) {
+            info.options->disabled = !CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0);
+            info.options->disabledTooltip =
+                "This option is disabled because \"Gloom Mode\" is turned off.";
+        })
         .Options(CheckboxOptions()
-                     //.Disabled(CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0))
                      .Tooltip(
             "Double Defense will give you an extra hit before losing a heart in Gloom Mode."));
 

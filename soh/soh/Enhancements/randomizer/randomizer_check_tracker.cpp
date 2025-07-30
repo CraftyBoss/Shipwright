@@ -500,6 +500,9 @@ void SetShopSeen(uint32_t sceneNum, bool prices) {
 }
 
 void CheckTrackerLoadGame(int32_t fileNum) {
+    if (IS_BOSS_RUSH) {
+        return;
+    }
     LoadSettings();
     TrySetAreas();
     for (auto& entry : Rando::StaticData::GetLocationTable()) {
@@ -592,7 +595,7 @@ void CheckTrackerLoadGame(int32_t fileNum) {
         Rando::Context::GetInstance()->GetEntranceShuffler()->ApplyEntranceOverrides();
     }
 
-    RecalculateAvailableChecks();
+    recalculateAvailable = true;
 }
 
 void CheckTrackerShopSlotChange(uint8_t cursorSlot, int16_t basePrice) {
@@ -759,7 +762,7 @@ void CheckTrackerFlagSet(int16_t flagType, int32_t flag) {
             if ((flag == EVENTCHKINF_CARPENTERS_FREE(0) || flag == EVENTCHKINF_CARPENTERS_FREE(1) ||
                  flag == EVENTCHKINF_CARPENTERS_FREE(2) || flag == EVENTCHKINF_CARPENTERS_FREE(3)) &&
                 GET_EVENTCHKINF_CARPENTERS_FREE_ALL()) {
-                SetCheckCollected(RC_GF_GERUDO_MEMBERSHIP_CARD);
+                SetCheckCollected(RC_TH_FREED_CARPENTERS);
                 return;
             }
             checkMatchType = SpoilerCollectionCheckType::SPOILER_CHK_EVENT_CHK_INF;
@@ -1003,6 +1006,11 @@ void CheckTrackerWindow::DrawElement() {
         ImGui::Text("Waiting for file load..."); // TODO Language
         EndFloatWindows();
         return;
+    }
+
+    if (recalculateAvailable) {
+        recalculateAvailable = false;
+        RecalculateAvailableChecks();
     }
 
     SceneID sceneId = SCENE_ID_MAX;
@@ -1589,10 +1597,10 @@ bool IsCheckShuffled(RandomizerCheck rc) {
                (loc->GetRCType() != RCTYPE_BOSS_KEY || showBossKeysanity) &&
                (loc->GetRCType() != RCTYPE_GANON_BOSS_KEY || showGanonBossKey) &&
                (rc != RC_KAK_100_GOLD_SKULLTULA_REWARD || show100SkullReward) &&
-               (loc->GetRCType() != RCTYPE_GF_KEY && rc != RC_GF_GERUDO_MEMBERSHIP_CARD ||
-                (showGerudoCard && rc == RC_GF_GERUDO_MEMBERSHIP_CARD) ||
+               (loc->GetRCType() != RCTYPE_GF_KEY && rc != RC_TH_FREED_CARPENTERS ||
+                (showGerudoCard && rc == RC_TH_FREED_CARPENTERS) ||
                 (fortressNormal && showGerudoFortressKeys && loc->GetRCType() == RCTYPE_GF_KEY) ||
-                (fortressFast && showGerudoFortressKeys && rc == RC_GF_NORTH_F1_CARPENTER));
+                (fortressFast && showGerudoFortressKeys && rc == RC_TH_1_TORCH_CARPENTER));
     } else if (loc->IsVanillaCompletion()) {
         return (OTRGlobals::Instance->gRandoContext->IsQuestOfLocationActive(rc) || rc == RC_GIFT_FROM_RAURU) &&
                rc != RC_LINKS_POCKET;
@@ -1603,10 +1611,11 @@ bool IsCheckShuffled(RandomizerCheck rc) {
 bool IsVisibleInCheckTracker(RandomizerCheck rc) {
     auto loc = Rando::StaticData::GetLocation(rc);
     if (IS_RANDO) {
-        return IsCheckShuffled(rc) ||
-               (alwaysShowGS && loc->GetRCType() == RCTYPE_SKULL_TOKEN &&
-                OTRGlobals::Instance->gRandoContext->IsQuestOfLocationActive(rc)) ||
-               (loc->GetRCType() == RCTYPE_SHOP && showShops && !hideShopUnshuffledChecks);
+        return !Rando::Context::GetInstance()->GetItemLocation(rc)->IsExcluded() &&
+               (IsCheckShuffled(rc) ||
+                (alwaysShowGS && loc->GetRCType() == RCTYPE_SKULL_TOKEN &&
+                 OTRGlobals::Instance->gRandoContext->IsQuestOfLocationActive(rc)) ||
+                (loc->GetRCType() == RCTYPE_SHOP && showShops && !hideShopUnshuffledChecks));
     } else {
         return loc->IsVanillaCompletion() &&
                (!loc->IsDungeon() || (loc->IsDungeon() && loc->GetQuest() == gSaveContext.ship.quest.id));
@@ -2000,7 +2009,7 @@ void ImGuiDrawTwoColorPickerSection(const char* text, const char* cvarMainName, 
 }
 
 void RecalculateAvailableChecks(RandomizerRegion startingRegion /* = RR_ROOT */) {
-    if (!enableAvailableChecks) {
+    if (!enableAvailableChecks || !GameInteractor::IsSaveLoaded()) {
         return;
     }
 
@@ -2072,10 +2081,6 @@ static std::unordered_map<int32_t, const char*> buttonStrings = {
 };
 
 void CheckTrackerSettingsWindow::DrawElement() {
-    if (recalculateAvailable) {
-        recalculateAvailable = false;
-        RecalculateAvailableChecks();
-    }
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, { 8.0f, 8.0f });
     if (ImGui::BeginTable("CheckTrackerSettingsTable", 2, ImGuiTableFlags_BordersH | ImGuiTableFlags_BordersV)) {
         ImGui::TableSetupColumn("General settings", ImGuiTableColumnFlags_WidthStretch, 200.0f);
@@ -2156,10 +2161,7 @@ void CheckTrackerSettingsWindow::DrawElement() {
                                                  "with your current progress.")
                                         .Color(THEME_COLOR))) {
             enableAvailableChecks = CVarGetInteger(CVAR_TRACKER_CHECK("EnableAvailableChecks"), 0);
-
-            if (GameInteractor::IsSaveLoaded(true)) {
-                RecalculateAvailableChecks();
-            }
+            RecalculateAvailableChecks();
         }
         ImGui::EndDisabled();
 

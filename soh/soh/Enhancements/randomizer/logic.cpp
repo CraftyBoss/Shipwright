@@ -441,6 +441,10 @@ bool Logic::CanOpenOverworldDoor(RandomizerGet key) {
     return HasItem(key);
 }
 
+bool Logic::CanOpenUnderwaterChest() {
+    return ctx->GetTrickOption(RT_OPEN_UNDERWATER_CHEST) && CanUse(RG_IRON_BOOTS) && CanUse(RG_HOOKSHOT);
+}
+
 uint8_t GetDifficultyValueFromString(Rando::Option& glitchOption) {
     return 0;
 }
@@ -483,6 +487,9 @@ bool Logic::CanKillEnemy(RandomizerEnemy enemy, EnemyDistance distance, bool wal
                          bool inWater) {
     bool killed = false;
     switch (enemy) {
+        case RE_GERUDO_GUARD:
+        case RE_BREAK_ROOM_GUARD:
+            return false;
         case RE_GOLD_SKULLTULA:
             switch (distance) {
                 case ED_CLOSE:
@@ -732,7 +739,8 @@ bool Logic::CanKillEnemy(RandomizerEnemy enemy, EnemyDistance distance, bool wal
                    (CanUse(RG_NUTS) || CanUse(RG_FAIRY_SLINGSHOT) || CanUse(RG_FAIRY_BOW) || HookshotOrBoomerang());
         case RE_KING_DODONGO:
             return HasBossSoul(RG_KING_DODONGO_SOUL) && CanJumpslash() &&
-                   (CanUse(RG_BOMB_BAG) || HasItem(RG_GORONS_BRACELET));
+                   (CanUse(RG_BOMB_BAG) || HasItem(RG_GORONS_BRACELET) ||
+                    (ctx->GetTrickOption(RT_DC_DODONGO_CHU) && IsAdult && CanUse(RG_BOMBCHU_5)));
         case RE_BARINADE:
             return HasBossSoul(RG_BARINADE_SOUL) && CanUse(RG_BOOMERANG) && CanJumpslashExceptHammer();
         case RE_PHANTOM_GANON:
@@ -741,7 +749,10 @@ bool Logic::CanKillEnemy(RandomizerEnemy enemy, EnemyDistance distance, bool wal
         case RE_VOLVAGIA:
             return HasBossSoul(RG_VOLVAGIA_SOUL) && CanUse(RG_MEGATON_HAMMER);
         case RE_MORPHA:
-            return HasBossSoul(RG_MORPHA_SOUL) && CanUse(RG_HOOKSHOT) && (CanUseSword() || CanUse(RG_MEGATON_HAMMER));
+            return HasBossSoul(RG_MORPHA_SOUL) &&
+                   (CanUse(RG_HOOKSHOT) ||
+                    (ctx->GetTrickOption(RT_WATER_MORPHA_WITHOUT_HOOKSHOT) && HasItem(RG_BRONZE_SCALE))) &&
+                   (CanUseSword() || CanUse(RG_MEGATON_HAMMER));
         case RE_BONGO_BONGO:
             return HasBossSoul(RG_BONGO_BONGO_SOUL) &&
                    (CanUse(RG_LENS_OF_TRUTH) || ctx->GetTrickOption(RT_LENS_BONGO)) && CanUseSword() &&
@@ -827,6 +838,11 @@ bool Logic::CanPassEnemy(RandomizerEnemy enemy, EnemyDistance distance, bool wal
         case RE_PURPLE_LEEVER:
         case RE_OCTOROK:
             return true;
+        case RE_GERUDO_GUARD:
+            return ctx->GetTrickOption(RT_PASS_GUARDS_WITH_NOTHING) || HasItem(RG_GERUDO_MEMBERSHIP_CARD) ||
+                   CanUse(RG_FAIRY_BOW) || CanUse(RG_HOOKSHOT);
+        case RE_BREAK_ROOM_GUARD:
+            return HasItem(RG_GERUDO_MEMBERSHIP_CARD) || CanUse(RG_FAIRY_BOW) || CanUse(RG_HOOKSHOT);
         case RE_BIG_SKULLTULA:
             // hammer jumpslash can pass, but only on flat land where you can kill with hammer swing
             return CanUse(RG_NUTS) || CanUse(RG_BOOMERANG);
@@ -835,6 +851,7 @@ bool Logic::CanPassEnemy(RandomizerEnemy enemy, EnemyDistance distance, bool wal
         case RE_GIBDO:
         case RE_REDEAD:
             // we need a way to check if suns won't force a reload
+            // RANDOTODO: check if stealthing past these guys works everywhere
             return CanUse(RG_HOOKSHOT) || CanUse(RG_SUNS_SONG);
         case RE_IRON_KNUCKLE:
         case RE_BIG_OCTO:
@@ -1160,11 +1177,6 @@ bool Logic::CanStunDeku() {
     return CanAttack() || CanUse(RG_NUTS) || CanReflectNuts();
 }
 
-bool Logic::CanLeaveForest() {
-    return ctx->GetOption(RSK_FOREST).IsNot(RO_CLOSED_FOREST_ON) || IsAdult || DekuTreeClear ||
-           ctx->GetOption(RSK_SHUFFLE_INTERIOR_ENTRANCES) || ctx->GetOption(RSK_SHUFFLE_OVERWORLD_ENTRANCES);
-}
-
 bool Logic::CallGossipFairyExceptSuns() {
     return CanUse(RG_ZELDAS_LULLABY) || CanUse(RG_EPONAS_SONG) || CanUse(RG_SONG_OF_TIME);
 }
@@ -1300,16 +1312,6 @@ bool Logic::TradeQuestStep(RandomizerGet rg) {
     return hasState;
 }
 
-bool Logic::CanFinishGerudoFortress() {
-    return (ctx->GetOption(RSK_GERUDO_FORTRESS).Is(RO_GF_CARPENTERS_NORMAL) && SmallKeys(RR_GERUDO_FORTRESS, 4) &&
-            CanKillEnemy(RE_GERUDO_WARRIOR) &&
-            (HasItem(RG_GERUDO_MEMBERSHIP_CARD) || CanUse(RG_FAIRY_BOW) || CanUse(RG_HOOKSHOT) ||
-             CanUse(RG_HOVER_BOOTS) || ctx->GetTrickOption(RT_GF_KITCHEN))) ||
-           (ctx->GetOption(RSK_GERUDO_FORTRESS).Is(RO_GF_CARPENTERS_FAST) && SmallKeys(RR_GERUDO_FORTRESS, 1) &&
-            CanKillEnemy(RE_GERUDO_WARRIOR)) ||
-           ctx->GetOption(RSK_GERUDO_FORTRESS).Is(RO_GF_CARPENTERS_FREE);
-}
-
 bool Logic::CanStandingShield() {
     return CanUse(RG_MIRROR_SHIELD) || (IsAdult && HasItem(RG_HYLIAN_SHIELD)) || CanUse(RG_DEKU_SHIELD);
 }
@@ -1432,7 +1434,7 @@ bool Logic::SmallKeys(RandomizerRegion dungeon, uint8_t requiredAmountGlitchless
             }*/
             return GetSmallKeyCount(SCENE_TREASURE_BOX_SHOP) >= requiredAmountGlitchless;
 
-        case RR_GERUDO_FORTRESS:
+        case RR_GF_OUTSKIRTS:
             return GetSmallKeyCount(SCENE_THIEVES_HIDEOUT) >= requiredAmountGlitchless;
 
         default:
@@ -2343,9 +2345,12 @@ void Logic::Reset(bool resetSaveContext /*= true*/) {
 
     // AmmoCanDrop = /*AmmoDrops.IsNot(AMMODROPS_NONE)*/ false; TODO: AmmoDrop setting
 
-    // Child item logic
-    SkullMask = false;
-    MaskOfTruth = false;
+    // Mask quest
+    CanBorrowMasks = false;
+    BorrowSkullMask = false;
+    BorrowSpookyMask = false;
+    BorrowBunnyHood = false;
+    BorrowRightMasks = false;
 
     // Adult logic
     FreedEpona = false;
@@ -2462,7 +2467,10 @@ void Logic::Reset(bool resetSaveContext /*= true*/) {
 
     // Events
     ShowedMidoSwordAndShield = false;
-    CarpenterRescue = false;
+    THCouldFree1TorchCarpenter = false;
+    THCouldFreeDoubleCellCarpenter = false;
+    TH_CouldFreeDeadEndCarpenter = false;
+    THCouldRescueSlopeCarpenter = false;
     GF_GateOpen = false;
     GtG_GateOpen = false;
     DampesWindmillAccess = false;
@@ -2515,7 +2523,7 @@ void Logic::Reset(bool resetSaveContext /*= true*/) {
     MQWaterStalfosPit = false;
     MQWaterDragonTorches = false;
     MQWaterB1Switch = false;
-    // MQWaterPillarSoTBlock     = false;
+    // MQWaterPillarSoTBlock          = false;
     MQWaterOpenedPillarB1 = false;
     MQSpiritCrawlBoulder = false;
     MQSpiritMapRoomEnemies = false;

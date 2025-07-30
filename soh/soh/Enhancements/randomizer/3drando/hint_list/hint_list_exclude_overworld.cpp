@@ -313,11 +313,11 @@ void StaticData::HintTable_Init_Exclude_Overworld() {
                                                  /*german*/ "Man erzählt sich, daß ein #Tauchexperiment# #[[1]]# einbrächte.",
                                                  /*french*/ "Selon moi, l'#expérience de plongée# donne #[[1]]#.", {QM_RED, QM_GREEN}));
                                               // /*spanish*/ Según dicen, #bucear para un experimento# se premia con #[[1]]#.
-    // RANDOTODO: needs translation
+
     hintTextTable[RHT_ZD_FISH] = HintText(CustomMessage("They say that a #fish by a waterfall# hoards #[[1]]#.",
                                              /*german*/ "Man erzählt sich, daß ein #Fisch nahe eines Wasserfalls# #[[1]]# horte.",
-                                             /*french*/ "Selon moi, #[[1]]#.", {QM_RED, QM_GREEN}));
-                                          // /*spanish*/ Según dicen, #[[1]]#.
+                                             /*french*/ "Selon moi, un #poisson près d'une cascade# a #[[1]]#.", {QM_RED, QM_GREEN}));
+                                          // /*spanish*/ Según dicen, un #pez junto a una cascada# otorga #[[1]]#.
 
 
     hintTextTable[RHT_GC_ROLLING_GORON_AS_ADULT] = HintText(CustomMessage("They say that #reassuring a young Goron# is rewarded with #[[1]]#.",
@@ -512,10 +512,10 @@ void StaticData::HintTable_Init_Exclude_Overworld() {
                                                         /*french*/ "Selon moi, le #trésor au fond du lac# est #[[1]]#.", {QM_RED, QM_GREEN}));
                                                      // /*spanish*/ Según dicen, el #tesoro hundido del lago# se trata de #[[1]]#.
 
-    hintTextTable[RHT_GF_GERUDO_MEMBERSHIP_CARD] = HintText(CustomMessage("They say that #rescuing captured carpenters# is rewarded with #[[1]]#.",
-                                                               /*german*/ "Man erzählt sich, daß das #Retten gefangener Zimmerleute# #[[1]]# einbrächte.",
-                                                               /*french*/ "Selon moi, #secourir les charpentiers capturés# assure #[[1]]#.", {QM_RED, QM_GREEN}));
-                                                            // /*spanish*/ Según dicen, #rescatar los apresados carpinteros# se premia con #[[1]]#.
+    hintTextTable[RHT_TH_FREED_CARPENTERS] = HintText(CustomMessage("They say that #rescuing captured carpenters# is rewarded with #[[1]]#.",
+                                                         /*german*/ "Man erzählt sich, daß das #Retten gefangener Zimmerleute# #[[1]]# einbrächte.",
+                                                         /*french*/ "Selon moi, #secourir les charpentiers capturés# assure #[[1]]#.", {QM_RED, QM_GREEN}));
+                                                      // /*spanish*/ Según dicen, #rescatar los apresados carpinteros# se premia con #[[1]]#.
 
     hintTextTable[RHT_WASTELAND_BOMBCHU_SALESMAN] = HintText(CustomMessage("They say that a #carpet guru# sells #[[1]]#.",
                                                                 /*german*/ "Man erzählt sich, daß ein #fliegender Einsiedler# #[[1]]# verkaufe.",
@@ -622,25 +622,25 @@ void StaticData::HintTable_Init_Exclude_Overworld() {
                                                                   /*french*/ "Selon moi, #recouvert de cendres volcaniques# gît #[[1]]#.", {QM_RED, QM_GREEN}));
                                                                // /*spanish*/ Según dicen, bajo la #ceniza volcánica# yace #[[1]]#.
 
-    hintTextTable[RHT_GF_NORTH_F1_CARPENTER] = HintText(CustomMessage("They say that #defeating Gerudo guards# reveals #[[1]]#.",
-                                                           /*german*/ "Man erzählt sich, daß das #Besiegen der Gerudo-Wachen# #[[1]]# enthüllen würde.",
-                                                           /*french*/ "Selon moi, les #geôliers Gerudo# détiennent #[[1]]#.", {QM_RED, QM_GREEN}));
+    hintTextTable[RHT_TH_1_TORCH_CARPENTER] = HintText(CustomMessage("They say that #defeating the Gerudo in a room with 1 torch# reveals #[[1]]#.",
+                                                           /*german*/ "Man erzählt sich, daß das #Besiegen der Gerudo-Wachen# #[[1]]# enthüllen würde.",//TODO_TRANSLATE update to match
+                                                           /*french*/ "Selon moi, les #geôliers Gerudo# détiennent #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE update to match
                                                         // /*spanish*/ Según dicen, #derrotar a las guardas Gerudo# revela #[[1]]#.
 
-    hintTextTable[RHT_GF_NORTH_F2_CARPENTER] = HintText(CustomMessage("They say that #defeating Gerudo guards# reveals #[[1]]#.",
-                                                           /*german*/ "Man erzählt sich, daß das #Besiegen der Gerudo-Wachen# #[[1]]# enthüllen würde.",
-                                                           /*french*/ "Selon moi, les #geôliers Gerudo# détiennent #[[1]]#.", {QM_RED, QM_GREEN}));
+    hintTextTable[RHT_TH_DEAD_END_CARPENTER] = HintText(CustomMessage("They say that #defeating the Gerudo in a Dead End# reveals #[[1]]#.",
+                                                           /*german*/ "Man erzählt sich, daß das #Besiegen der Gerudo-Wachen# #[[1]]# enthüllen würde.",//TODO_TRANSLATE update to match
+                                                           /*french*/ "Selon moi, les #geôliers Gerudo# détiennent #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE update to match
                                                         // /*spanish*/ Según dicen, #derrotar a las guardas Gerudo# revela #[[1]]#.
 
-    hintTextTable[RHT_GF_SOUTH_F1_CARPENTER] = HintText(CustomMessage("They say that #defeating Gerudo guards# reveals #[[1]]#.",
-                                                           /*german*/ "Man erzählt sich, daß das #Besiegen der Gerudo-Wachen# #[[1]]# enthüllen würde.",
-                                                           /*french*/ "Selon moi, les #geôliers Gerudo# détiennent #[[1]]#.", {QM_RED, QM_GREEN}));
-                                                        // /*spanish*/ Según dicen, #derrotar a las guardas Gerudo# revela #[[1]]#.
+    hintTextTable[RHT_TH_DOUBLE_CELL_CARPENTER] = HintText(CustomMessage("They say that #defeating the Gerudo in a large jail# reveals #[[1]]#.",
+                                                              /*german*/ "Man erzählt sich, daß das #Besiegen der Gerudo-Wachen# #[[1]]# enthüllen würde.",//TODO_TRANSLATE update to match
+                                                              /*french*/ "Selon moi, les #geôliers Gerudo# détiennent #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE update to match
+                                                           // /*spanish*/ Según dicen, #derrotar a las guardas Gerudo# revela #[[1]]#.
 
-    hintTextTable[RHT_GF_SOUTH_F2_CARPENTER] = HintText(CustomMessage("They say that #defeating Gerudo guards# reveals #[[1]]#.",
-                                                           /*german*/ "Man erzählt sich, daß das #Besiegen der Gerudo-Wachen# #[[1]]# enthüllen würde.",
-                                                           /*french*/ "Selon moi, les #geôliers Gerudo# détiennent #[[1]]#.", {QM_RED, QM_GREEN}));
-                                                        // /*spanish*/ Según dicen, #derrotar a las guardas Gerudo# revela #[[1]]#.
+    hintTextTable[RHT_TH_STEEP_SLOPE_CARPENTER] = HintText(CustomMessage("They say that #defeating the Gerudo between steep slopes# reveals #[[1]]#.",
+                                                              /*german*/ "Man erzählt sich, daß das #Besiegen der Gerudo-Wachen# #[[1]]# enthüllen würde.",//TODO_TRANSLATE update to match
+                                                              /*french*/ "Selon moi, les #geôliers Gerudo# détiennent #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE update to match
+                                                           // /*spanish*/ Según dicen, #derrotar a las guardas Gerudo# revela #[[1]]#.
 
     hintTextTable[RHT_HF_GS_NEAR_KAK_GROTTO] = HintText(CustomMessage("They say that a #spider-guarded spider in a hole# hoards #[[1]]#.",
                                                            /*german*/ "Man erzählt sich, daß eine #spinnenbewachte Spinne in einem Erdloch #[[1]]# horte.",
@@ -1492,27 +1492,72 @@ void StaticData::HintTable_Init_Exclude_Overworld() {
                                                               /*french*/ "Selon moi, une #rucheau derrière le Roi des Zoras# cache #[[1]]#.", {QM_RED, QM_GREEN}));
                                                            // /*spanish*/ Según dicen, una #colmena detrás del rey de los zoras# esconde #[[1]]#.
 
-    hintTextTable[RHT_POT_KOKIRI_FOREST] = HintText(CustomMessage("They say that a #pot in Kokiri Forest# contains #[[1]]#.",
-                                                       /*german*/ "Man erzählt sich, daß ein #Krug im Kokiri-Wald# #[[1]]# enthielte.",
-                                                       /*french*/ "Selon moi, une #jarre dans la Fôret Kokiri# contient #[[1]]#.", {QM_RED, QM_GREEN}));
+    hintTextTable[RHT_POT_LINKS_HOUSE] = HintText(CustomMessage("They say that the #pot in the hero's house# contains #[[1]]#.",
+                                                       /*german*/ "Man erzählt sich, daß eine #Vase im Kokiri-Wald# #[[1]]# enthielte.", //TODO_TRANSLATE update to match
+                                                       /*french*/ "Selon moi, une #jarre dans la Fôret Kokiri# contient #[[1]]#.", {QM_RED, QM_GREEN}));  //TODO_TRANSLATE update to match
 
-    hintTextTable[RHT_POT_GERUDO_FORTRESS] = HintText(CustomMessage("They say that a #pot in Gerudo Fortress# contains #[[1]]#.",
-                                                         /*german*/ "Man erzählt sich, daß ein #Krug in der Gerudo-Festung# #[[1]]# enthielte.",
-                                                         /*french*/ "Selon moi, une #jarre dans la Forteresse Gerudo# contient #[[1]]#.", {QM_RED, QM_GREEN}));
+    hintTextTable[RHT_POT_TWINS_HOUSE] = HintText(CustomMessage("They say that a #pot shared by twins# contains #[[1]]#.",
+                                                       /*german*/ "Man erzählt sich, daß eine #Vase im Kokiri-Wald# #[[1]]# enthielte.",  //TODO_TRANSLATE update to match
+                                                       /*french*/ "Selon moi, une #jarre dans la Fôret Kokiri# contient #[[1]]#.", {QM_RED, QM_GREEN}));  //TODO_TRANSLATE update to match
+
+    hintTextTable[RHT_POT_KNOW_IT_ALL] = HintText(CustomMessage("They say that a #know-it-all bother's pot# contains #[[1]]#.",
+                                                       /*german*/ "Man erzählt sich, daß eine #Vase im Kokiri-Wald# #[[1]]# enthielte.",  //TODO_TRANSLATE update to match
+                                                       /*french*/ "Selon moi, une #jarre dans la Fôret Kokiri# contient #[[1]]#.", {QM_RED, QM_GREEN}));  //TODO_TRANSLATE update to match
+
+    hintTextTable[RHT_TH_BREAK_ROOM_FRONT_POT] = HintText(CustomMessage("They say that the #front pot watched by resting thieves# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_BREAK_ROOM_BACK_POT] = HintText(CustomMessage("They say that the #back pot watched by resting thieves# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_KITCHEN_POT_1] = HintText(CustomMessage("They say that a #Hideout's Kitchen pot# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_KITCHEN_POT_2] = HintText(CustomMessage("They say that a #Hideout's Kitchen pot# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_1_TORCH_CELL_RIGHT_POT] = HintText(CustomMessage("They say that the #thieve's right pot, watched by a single torch# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_1_TORCH_CELL_MID_POT] = HintText(CustomMessage("They say that the #thieve's middle pot, watched by a single torch# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_1_TORCH_CELL_LEFT_POT] = HintText(CustomMessage("They say that the #thieve's left pot, watched by a single torch# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_STEEP_SLOPE_RIGHT_POT] = HintText(CustomMessage("They say that a #Gerudo pot, on the right of a sloped corner# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_STEEP_SLOPE_LEFT_POT] = HintText(CustomMessage("They say that a #Gerudo pot, on the left of a sloped corner# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_NEAR_DOUBLE_CELL_RIGHT_POT] = HintText(CustomMessage("They say that the #right pot near 2 jail cells# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_NEAR_DOUBLE_CELL_MID_POT] = HintText(CustomMessage("They say that the #mid pot near 2 jail cells# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_NEAR_DOUBLE_CELL_LEFT_POT] = HintText(CustomMessage("They say that the #left pot near 2 jail cells# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_RIGHTMOST_JAILED_POT] = HintText(CustomMessage("They say that the #rightmost jailed pot# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_RIGHT_MIDDLE_JAILED_POT] = HintText(CustomMessage("They say that the #right middle jailed pot# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_LEFT_MIDDLE_JAILED_POT] = HintText(CustomMessage("They say that the #left middle jailed pot# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
+
+    hintTextTable[RHT_TH_LEFTMOST_JAILED_POT] = HintText(CustomMessage("They say that the #leftmost jailed pot# contains #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE
 
     hintTextTable[RHT_POT_WASTELAND] = HintText(CustomMessage("They say that a #pot in Haunted Wasteland# contains #[[1]]#.",
                                                    /*german*/ "Man erzählt sich, daß ein #Krug in der Gespensterwüste# #[[1]]# enthielte.",
                                                    /*french*/ "Selon moi, une #jarre dans le Désert Hanté# contient #[[1]]#.", {QM_RED, QM_GREEN}));
 
-    hintTextTable[RHT_POT_MARKET] = HintText(CustomMessage("They say that a #pot in Market# contains #[[1]]#.",
-                                                /*german*/ "Man erzählt sich, daß ein #Krug auf dem Markt# #[[1]]# enthielte.",
-                                                /*french*/ "Selon moi, une #jarre dans la Place du Marché# contient #[[1]]#.", {QM_RED, QM_GREEN}));
+    hintTextTable[RHT_POT_GUARD_HOUSE] = HintText(CustomMessage("They say that a #pot in the Guard House# contains #[[1]]#.",
+                                                /*german*/ "Man erzählt sich, daß eine #Krug auf dem Markt# #[[1]]# enthielte.",//TODO_TRANSLATE update to match
+                                                /*french*/ "Selon moi, une #jarre dans la Place du Marché# contient #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE update to match
+
+    hintTextTable[RHT_POT_POE_SHOP] = HintText(CustomMessage("They say that a #pot in the Poe Shop# contains #[[1]]#.",
+                                                /*german*/ "Man erzählt sich, daß eine #Krug auf dem Markt# #[[1]]# enthielte.",//TODO_TRANSLATE update to match
+                                                /*french*/ "Selon moi, une #jarre dans la Place du Marché# contient #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE update to match
+
+    hintTextTable[RHT_POT_ALLEY_HOUSE] = HintText(CustomMessage("They say that a #bearded man's pot# contains #[[1]]#.",
+                                                /*german*/ "Man erzählt sich, daß eine #Krug auf dem Markt# #[[1]]# enthielte.",//TODO_TRANSLATE update to match
+                                                /*french*/ "Selon moi, une #jarre dans la Place du Marché# contient #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE update to match
 
     hintTextTable[RHT_POT_KAKARIKO] = HintText(CustomMessage("They say that a #pot in Kakariko Village# contains #[[1]]#.",
                                                   /*german*/ "Man erzählt sich, daß ein #Krug in Kakariko# #[[1]]# enthielte.",
                                                   /*french*/ "Selon moi, une #jarre dans le Village de Cocorico# contient #[[1]]#.", {QM_RED, QM_GREEN}));
 
-    hintTextTable[RHT_POT_GRAVEYARD] = HintText(CustomMessage("They say that a #pot in Graveyard# contains #[[1]]#.",
+    hintTextTable[RHT_POT_DAMPE] = HintText(CustomMessage("They say that a #pot in gravekeeper's tomb# contains #[[1]]#.",
+                                                         //TODO_TRANSLATE check these to make sure they refernce dampe's tomb not the graveyard area
                                                    /*german*/ "Man erzählt sich, daß ein #Krug auf dem Friedhof# #[[1]]# enthielte.",
                                                    /*french*/ "Selon moi, une #jarre dans le Cimetière# contient #[[1]]#.", {QM_RED, QM_GREEN}));
 
@@ -1536,13 +1581,17 @@ void StaticData::HintTable_Init_Exclude_Overworld() {
                                                        /*german*/ "Man erzählt sich, daß ein #Krug auf der Lon Lon-Farm# #[[1]]# enthielte.",
                                                        /*french*/ "Selon moi, une #jarre dans le Ranch Lon Lon# contient #[[1]]#.", {QM_RED, QM_GREEN}));
 
-    hintTextTable[RHT_POT_HYRULE_FIELD] = HintText(CustomMessage("They say that a #pot in Hyrule Field# contains #[[1]]#.",
-                                                      /*german*/ "Man erzählt sich, daß ein #Krug in der Hylianischen Steppe# #[[1]]# enthielte.",
-                                                      /*french*/ "Selon moi, une #jarre dans la Plaine d'Hyrule# contient #[[1]]#.", {QM_RED, QM_GREEN}));
+    hintTextTable[RHT_POT_TALONS_HOUSE] = HintText(CustomMessage("They say that a #pot in Talon's Bedroom# contains #[[1]]#.",
+                                                       /*german*/ "Man erzählt sich, daß eine #Krug auf der Lon Lon-Farm# #[[1]]# enthielte.",//TODO_TRANSLATE update to match
+                                                       /*french*/ "Selon moi, une #jarre dans le Ranch Lon Lon# contient #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE update to match
 
-    hintTextTable[RHT_POT_HYRULE_CASTLE] = HintText(CustomMessage("They say that a #pot in Hyrule Castle# contains #[[1]]#.",
-                                                       /*german*/ "Man erzählt sich, daß ein #Krug in Schloß Hyrule# #[[1]]# enthielte.",
-                                                       /*french*/ "Selon moi, une #jarre dans le Château d'Hyrule# contient #[[1]]#.", {QM_RED, QM_GREEN}));
+    hintTextTable[RHT_POT_WEB_GROTTO] = HintText(CustomMessage("They say that a #pot behind a grotto's webbing# contains #[[1]]#.",
+                                                      /*german*/ "Man erzählt sich, daß eine #Krug in der Hylianischen Steppe# #[[1]]# enthielte.",//TODO_TRANSLATE update to match
+                                                      /*french*/ "Selon moi, une #jarre dans la Plaine d'Hyrule# contient #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE update to match
+
+    hintTextTable[RHT_POT_MUD_WALL_GROTTO] = HintText(CustomMessage("They say that a #pot walled off in a grotto# contains #[[1]]#.",
+                                                       /*german*/ "Man erzählt sich, daß eine #Krug in Schloß Hyrule# #[[1]]# enthielte.",//TODO_TRANSLATE update to match
+                                                       /*french*/ "Selon moi, une #jarre dans le Château d'Hyrule# contient #[[1]]#.", {QM_RED, QM_GREEN}));//TODO_TRANSLATE update to match
 
     hintTextTable[RHT_KOKIRI_FOREST_RUPEE] = HintText(CustomMessage("They say that a rupee in a #tranquil forest# hides #[[1]]#.",
                                                          /*german*/ "Man erzählt sich, daß ein Rubin in einem #ruhigen Wald# #[[1]]# verstecke.",
@@ -1961,7 +2010,7 @@ void StaticData::HintTable_Init_Exclude_Overworld() {
                                             /*german*/ "Man erzählt sich, daß das #Machen von Regen in den verlorenen Wäldern# #[[1]]# enthülle.",
                                             /*french*/ "Selon moi, #jouer une mélodie orageuse dans les Bois Perdus# révèle #[[1]]#.", {QM_RED, QM_GREEN}));
 
-    hintTextTable[RHT_GF_KITCHEN_SUN_FAIRY] = HintText(CustomMessage("They say that #calling the sun in a guarded kitchen# exposes #[[1]]#.",
+    hintTextTable[RHT_TH_KITCHEN_SUN_FAIRY] = HintText(CustomMessage("They say that #calling the sun in a guarded kitchen# exposes #[[1]]#.",
                                             /*german*/ "Man erzählt sich, daß das #Anrufen der Sonne in einer bewachten Küche# #[[1]]# freilege.",
                                             /*french*/ "Selon moi, #appeler le soleil dans une cuisine gardée# révèle #[[1]]#.", {QM_RED, QM_GREEN}));
 

@@ -30,9 +30,12 @@ class Logic {
   public:
     bool noVariable = false;
 
-    // Child item logic
-    bool SkullMask = false;
-    bool MaskOfTruth = false;
+    // Mask Quest
+    bool CanBorrowMasks = false;
+    bool BorrowSkullMask = false;
+    bool BorrowSpookyMask = false;
+    bool BorrowBunnyHood = false;
+    bool BorrowRightMasks = false;
 
     // Adult logic
     bool FreedEpona = false;
@@ -110,7 +113,11 @@ class Logic {
 
     // Events
     bool ShowedMidoSwordAndShield = false;
-    bool CarpenterRescue = false;
+    bool THCouldFree1TorchCarpenter = false;
+    bool THCouldFreeDoubleCellCarpenter = false;
+    bool TH_CouldFreeDeadEndCarpenter = false;
+    bool THCouldRescueSlopeCarpenter = false;
+    bool THRescuedAllCarpenters = false;
     bool GF_GateOpen = false;
     bool GtG_GateOpen = false;
     bool DampesWindmillAccess = false;
@@ -189,6 +196,7 @@ class Logic {
     bool CanOpenOverworldDoor(RandomizerGet itemName);
     bool SmallKeys(RandomizerRegion dungeon, uint8_t requiredAmount);
     bool SmallKeys(RandomizerRegion dungeon, uint8_t requiredAmountGlitchless, uint8_t requiredAmountGlitched);
+    bool CanOpenUnderwaterChest();
     bool CanDoGlitch(GlitchType glitch);
     bool CanEquipSwap(RandomizerGet itemName);
     bool CanKillEnemy(RandomizerEnemy enemy, EnemyDistance distance = ED_CLOSE, bool wallOrFloor = true,
@@ -223,7 +231,6 @@ class Logic {
     bool CanReflectNuts();
     bool CanCutShrubs();
     bool CanStunDeku();
-    bool CanLeaveForest();
     bool CallGossipFairy();
     bool CallGossipFairyExceptSuns();
     uint8_t EffectiveHealth();
@@ -245,7 +252,6 @@ class Logic {
     bool HasFireSource();
     bool HasFireSourceWithTorch();
     bool TradeQuestStep(RandomizerGet rg);
-    bool CanFinishGerudoFortress();
     bool CanStandingShield();
     bool CanShield();
     bool CanUseProjectile();

@@ -472,26 +472,74 @@ std::unordered_map<s16, s16> getItemIdToItemId = {
 #pragma GCC optimize("O0")
 #endif
 bool Randomizer::SpoilerFileExists(const char* spoilerFileName) {
-    if (strcmp(spoilerFileName, "") != 0) {
-        std::ifstream spoilerFileStream(SohUtils::Sanitize(spoilerFileName));
+    static std::unordered_map<std::string, bool> existsCache;
+    static std::unordered_map<std::string, std::filesystem::file_time_type> lastModifiedCache;
+
+    if (strcmp(spoilerFileName, "") == 0) {
+        return false;
+    }
+
+    std::string sanitizedFileName = SohUtils::Sanitize(spoilerFileName);
+
+    try {
+        // Check if file exists and get last modified time
+        std::filesystem::path filePath(sanitizedFileName);
+        if (!std::filesystem::exists(filePath)) {
+            // Cache and return false if file doesn't exist
+            existsCache[sanitizedFileName] = false;
+            lastModifiedCache.erase(sanitizedFileName);
+            return false;
+        }
+
+        auto currentLastModified = std::filesystem::last_write_time(filePath);
+
+        // Check cache first
+        auto existsCacheIt = existsCache.find(sanitizedFileName);
+        auto lastModifiedCacheIt = lastModifiedCache.find(sanitizedFileName);
+
+        // If we have a valid cache entry and the file hasn't been modified
+        if (existsCacheIt != existsCache.end() && lastModifiedCacheIt != lastModifiedCache.end() &&
+            lastModifiedCacheIt->second == currentLastModified) {
+            return existsCacheIt->second;
+        }
+
+        // Cache miss or file modified - need to check contents
+        std::ifstream spoilerFileStream(sanitizedFileName);
         if (spoilerFileStream) {
             nlohmann::json contents;
             spoilerFileStream >> contents;
             spoilerFileStream.close();
-            if (contents.contains("version") &&
-                strcmp(std::string(contents["version"]).c_str(), (char*)gBuildVersion) == 0) {
-                return true;
-            } else {
+
+            bool isValid = contents.contains("version") &&
+                           strcmp(std::string(contents["version"]).c_str(), (char*)gBuildVersion) == 0;
+
+            if (!isValid) {
                 SohGui::RegisterPopup(
                     "Old Spoiler Version",
                     "The spoiler file located at\n" + std::string(spoilerFileName) +
                         "\nwas made by a version that doesn't match the currently running version.\n" +
                         "Loading for this file has been cancelled.");
+                CVarClear(CVAR_GENERAL("SpoilerLog"));
+                Ship::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
             }
-        }
-    }
 
-    return false;
+            // Update cache
+            existsCache[sanitizedFileName] = isValid;
+            lastModifiedCache[sanitizedFileName] = currentLastModified;
+            return isValid;
+        }
+
+        // File couldn't be opened
+        existsCache[sanitizedFileName] = false;
+        lastModifiedCache.erase(sanitizedFileName);
+        return false;
+
+    } catch (const std::filesystem::filesystem_error&) {
+        // Handle filesystem errors by invalidating cache
+        existsCache[sanitizedFileName] = false;
+        lastModifiedCache.erase(sanitizedFileName);
+        return false;
+    }
 }
 #ifdef _MSC_VER
 #pragma optimize("", on)
@@ -1706,22 +1754,22 @@ std::map<RandomizerCheck, RandomizerInf> rcToRandomizerInf = {
     { RC_KF_TWINS_HOUSE_POT_2, RAND_INF_KF_TWINS_HOUSE_POT_2 },
     { RC_KF_BROTHERS_HOUSE_POT_1, RAND_INF_KF_BROTHERS_HOUSE_POT_1 },
     { RC_KF_BROTHERS_HOUSE_POT_2, RAND_INF_KF_BROTHERS_HOUSE_POT_2 },
-    { RC_GF_BREAK_ROOM_POT_1, RAND_INF_GF_BREAK_ROOM_POT_1 },
-    { RC_GF_BREAK_ROOM_POT_2, RAND_INF_GF_BREAK_ROOM_POT_2 },
-    { RC_GF_KITCHEN_POT_1, RAND_INF_GF_KITCHEN_POT_1 },
-    { RC_GF_KITCHEN_POT_2, RAND_INF_GF_KITCHEN_POT_2 },
-    { RC_GF_NORTH_F1_CARPENTER_POT_1, RAND_INF_GF_NORTH_F1_CARPENTER_POT_1 },
-    { RC_GF_NORTH_F1_CARPENTER_POT_2, RAND_INF_GF_NORTH_F1_CARPENTER_POT_2 },
-    { RC_GF_NORTH_F1_CARPENTER_POT_3, RAND_INF_GF_NORTH_F1_CARPENTER_POT_3 },
-    { RC_GF_NORTH_F2_CARPENTER_POT_1, RAND_INF_GF_NORTH_F2_CARPENTER_POT_1 },
-    { RC_GF_NORTH_F2_CARPENTER_POT_2, RAND_INF_GF_NORTH_F2_CARPENTER_POT_2 },
-    { RC_GF_SOUTH_F1_CARPENTER_POT_1, RAND_INF_GF_SOUTH_F1_CARPENTER_POT_1 },
-    { RC_GF_SOUTH_F1_CARPENTER_POT_2, RAND_INF_GF_SOUTH_F1_CARPENTER_POT_2 },
-    { RC_GF_SOUTH_F1_CARPENTER_POT_3, RAND_INF_GF_SOUTH_F1_CARPENTER_POT_3 },
-    { RC_GF_SOUTH_F1_CARPENTER_CELL_POT_1, RAND_INF_GF_SOUTH_F1_CARPENTER_CELL_POT_1 },
-    { RC_GF_SOUTH_F1_CARPENTER_CELL_POT_2, RAND_INF_GF_SOUTH_F1_CARPENTER_CELL_POT_2 },
-    { RC_GF_SOUTH_F1_CARPENTER_CELL_POT_3, RAND_INF_GF_SOUTH_F1_CARPENTER_CELL_POT_3 },
-    { RC_GF_SOUTH_F1_CARPENTER_CELL_POT_4, RAND_INF_GF_SOUTH_F1_CARPENTER_CELL_POT_4 },
+    { RC_TH_BREAK_ROOM_FRONT_POT, RAND_INF_TH_BREAK_ROOM_FRONT_POT },
+    { RC_TH_BREAK_ROOM_BACK_POT, RAND_INF_TH_BREAK_ROOM_BACK_POT },
+    { RC_TH_KITCHEN_POT_1, RAND_INF_TH_KITCHEN_POT_1 },
+    { RC_TH_KITCHEN_POT_2, RAND_INF_TH_KITCHEN_POT_2 },
+    { RC_TH_1_TORCH_CELL_RIGHT_POT, RAND_INF_TH_1_TORCH_CELL_RIGHT_POT },
+    { RC_TH_1_TORCH_CELL_MID_POT, RAND_INF_TH_1_TORCH_CELL_MID_POT },
+    { RC_TH_1_TORCH_CELL_LEFT_POT, RAND_INF_TH_1_TORCH_CELL_LEFT_POT },
+    { RC_TH_STEEP_SLOPE_RIGHT_POT, RAND_INF_TH_STEEP_SLOPE_RIGHT_POT },
+    { RC_TH_STEEP_SLOPE_LEFT_POT, RAND_INF_TH_STEEP_SLOPE_LEFT_POT },
+    { RC_TH_NEAR_DOUBLE_CELL_RIGHT_POT, RAND_INF_TH_NEAR_DOUBLE_CELL_RIGHT_POT },
+    { RC_TH_NEAR_DOUBLE_CELL_MID_POT, RAND_INF_TH_NEAR_DOUBLE_CELL_MID_POT },
+    { RC_TH_NEAR_DOUBLE_CELL_LEFT_POT, RAND_INF_NEAR_DOUBLE_CELL_LEFT_POT },
+    { RC_TH_RIGHTMOST_JAILED_POT, RAND_INF_TH_RIGHTMOST_JAILED_POT },
+    { RC_TH_RIGHT_MIDDLE_JAILED_POT, RAND_INF_TH_RIGHT_MIDDLE_JAILED_POT },
+    { RC_TH_LEFT_MIDDLE_JAILED_POT, RAND_INF_TH_LEFT_MIDDLE_JAILED_POT },
+    { RC_TH_LEFTMOST_JAILED_POT, RAND_INF_TH_LEFTMOST_JAILED_POT },
     { RC_WASTELAND_NEAR_GS_POT_1, RAND_INF_WASTELAND_NEAR_GS_POT_1 },
     { RC_WASTELAND_NEAR_GS_POT_2, RAND_INF_WASTELAND_NEAR_GS_POT_2 },
     { RC_WASTELAND_NEAR_GS_POT_3, RAND_INF_WASTELAND_NEAR_GS_POT_3 },
@@ -2272,136 +2320,136 @@ std::map<RandomizerCheck, RandomizerInf> rcToRandomizerInf = {
         RAND_INF_GF_ABOVE_JAIL_CRATE,
     },
     {
-        RC_GF_OUTSIDE_CENTER_CRATE_1,
-        RAND_INF_GF_OUTSIDE_CENTER_CRATE_1,
+        RC_GF_SOUTHMOST_CENTER_CRATE,
+        RAND_INF_GF_SOUTHMOST_CENTER_CRATE,
     },
     {
-        RC_GF_OUTSIDE_CENTER_CRATE_2,
-        RAND_INF_GF_OUTSIDE_CENTER_CRATE_2,
+        RC_GF_MID_SOUTH_CENTER_CRATE,
+        RAND_INF_GF_MID_SOUTH_CENTER_CRATE,
     },
     {
-        RC_GF_OUTSIDE_CENTER_CRATE_3,
-        RAND_INF_GF_OUTSIDE_CENTER_CRATE_3,
+        RC_GF_MID_NORTH_CENTER_CRATE,
+        RAND_INF_GF_MID_NORTH_CENTER_CRATE,
     },
     {
-        RC_GF_OUTSIDE_CENTER_CRATE_4,
-        RAND_INF_GF_OUTSIDE_CENTER_CRATE_4,
+        RR_GF_NORTHMOST_CENTER_CRATE,
+        RAND_INF_GF_NORTHMOST_CENTER_CRATE,
     },
     {
-        RC_GF_OUTSIDE_LEFT_CRATE_1,
-        RAND_INF_GF_OUTSIDE_LEFT_CRATE_1,
+        RC_GF_OUTSKIRTS_NE_CRATE,
+        RAND_INF_GF_OUTSKIRTS_NE_CRATE,
     },
     {
-        RC_GF_OUTSIDE_LEFT_CRATE_2,
-        RAND_INF_GF_OUTSIDE_LEFT_CRATE_2,
+        RC_GF_OUTSKIRTS_NW_CRATE,
+        RAND_INF_GF_OUTSKIRTS_NW_CRATE,
     },
     {
-        RC_GF_ARCHERY_RANGE_CRATE_1,
-        RAND_INF_GF_ARCHERY_RANGE_CRATE_1,
+        RC_GF_HBA_RANGE_CRATE_1,
+        RAND_INF_GF_HBA_RANGE_CRATE_1,
     },
     {
-        RC_GF_ARCHERY_RANGE_CRATE_2,
-        RAND_INF_GF_ARCHERY_RANGE_CRATE_2,
+        RC_GF_HBA_RANGE_CRATE_2,
+        RAND_INF_GF_HBA_RANGE_CRATE_2,
     },
     {
-        RC_GF_ARCHERY_RANGE_CRATE_3,
-        RAND_INF_GF_ARCHERY_RANGE_CRATE_3,
+        RC_GF_HBA_RANGE_CRATE_3,
+        RAND_INF_GF_HBA_RANGE_CRATE_3,
     },
     {
-        RC_GF_ARCHERY_RANGE_CRATE_4,
-        RAND_INF_GF_ARCHERY_RANGE_CRATE_4,
+        RC_GF_HBA_RANGE_CRATE_4,
+        RAND_INF_GF_HBA_RANGE_CRATE_4,
     },
     {
-        RC_GF_ARCHERY_RANGE_CRATE_5,
-        RAND_INF_GF_ARCHERY_RANGE_CRATE_5,
+        RC_GF_HBA_RANGE_CRATE_5,
+        RAND_INF_GF_HBA_RANGE_CRATE_5,
     },
     {
-        RC_GF_ARCHERY_RANGE_CRATE_6,
-        RAND_INF_GF_ARCHERY_RANGE_CRATE_6,
+        RC_GF_HBA_RANGE_CRATE_6,
+        RAND_INF_GF_HBA_RANGE_CRATE_6,
     },
     {
-        RC_GF_ARCHERY_RANGE_CRATE_7,
-        RAND_INF_GF_ARCHERY_RANGE_CRATE_7,
+        RC_GF_HBA_RANGE_CRATE_7,
+        RAND_INF_GF_HBA_RANGE_CRATE_7,
     },
     {
-        RC_GF_ARCHERY_START_CRATE_1,
-        RAND_INF_GF_ARCHERY_START_CRATE_1,
+        RC_GF_HBA_CANOPY_EAST_CRATE,
+        RAND_INF_GF_HBA_CANOPY_EAST_CRATE,
     },
     {
-        RC_GF_ARCHERY_START_CRATE_2,
-        RAND_INF_GF_ARCHERY_START_CRATE_2,
+        RC_GF_HBA_CANOPY_WEST_CRATE,
+        RAND_INF_GF_HBA_CANOPY_WEST_CRATE,
     },
     {
-        RC_GF_ARCHERY_LEFT_END_CRATE_1,
-        RAND_INF_GF_ARCHERY_LEFT_END_CRATE_1,
+        RC_GF_NORTH_TARGET_EAST_CRATE,
+        RAND_INF_GF_NORTH_TARGET_EAST_CRATE,
     },
     {
-        RC_GF_ARCHERY_LEFT_END_CRATE_2,
-        RAND_INF_GF_ARCHERY_LEFT_END_CRATE_2,
+        RC_GF_NORTH_TARGET_WEST_CRATE,
+        RAND_INF_GF_NORTH_TARGET_WEST_CRATE,
     },
     {
-        RC_GF_ARCHERY_LEFT_END_CHILD_CRATE,
-        RAND_INF_GF_ARCHERY_LEFT_END_CHILD_CRATE,
+        RC_GF_NORTH_TARGET_CHILD_CRATE,
+        RAND_INF_GF_NORTH_TARGET_CHILD_CRATE,
     },
     {
-        RC_GF_ARCHERY_RIGHT_END_CRATE_1,
-        RAND_INF_GF_ARCHERY_RIGHT_END_CRATE_1,
+        RC_GF_SOUTH_TARGET_EAST_CRATE,
+        RAND_INF_GF_SOUTH_TARGET_EAST_CRATE,
     },
     {
-        RC_GF_ARCHERY_RIGHT_END_CRATE_2,
-        RAND_INF_GF_ARCHERY_RIGHT_END_CRATE_2,
+        RC_GF_SOUTH_TARGET_WEST_CRATE,
+        RAND_INF_GF_SOUTH_TARGET_WEST_CRATE,
     },
     {
-        RC_GF_KITCHEN_CRATE_1,
-        RAND_INF_GF_KITCHEN_CRATE_1,
+        RC_TH_NEAR_KITCHEN_LEFTMOST_CRATE,
+        RAND_INF_TH_NEAR_KITCHEN_LEFTMOST_CRATE,
     },
     {
-        RC_GF_KITCHEN_CRATE_2,
-        RAND_INF_GF_KITCHEN_CRATE_2,
+        RC_TH_NEAR_KITCHEN_MID_LEFT_CRATE,
+        RAND_INF_TH_NEAR_KITCHEN_MID_LEFT_CRATE,
     },
     {
-        RC_GF_KITCHEN_CRATE_3,
-        RAND_INF_GF_KITCHEN_CRATE_3,
+        RC_TH_NEAR_KITCHEN_MID_RIGHT_CRATE,
+        RAND_INF_TH_NEAR_KITCHEN_MID_RIGHT_CRATE,
     },
     {
-        RC_GF_KITCHEN_CRATE_4,
-        RAND_INF_GF_KITCHEN_CRATE_4,
+        RC_TH_NEAR_KITCHEN_RIGHTMOST_CRATE,
+        RAND_INF_TH_NEAR_KITCHEN_RIGHTMOST_CRATE,
     },
     {
-        RC_GF_KITCHEN_CRATE_5,
-        RAND_INF_GF_KITCHEN_CRATE_5,
+        RC_TH_KITCHEN_CRATE,
+        RAND_INF_TH_KITCHEN_CRATE,
     },
     {
-        RC_GF_BREAK_ROOM_CRATE_1,
-        RAND_INF_GF_BREAK_ROOM_CRATE_1,
+        RC_TH_BREAK_HALLWAY_OUTER_CRATE,
+        RAND_INF_TH_BREAK_HALLWAY_OUTER_CRATE,
     },
     {
-        RC_GF_BREAK_ROOM_CRATE_2,
-        RAND_INF_GF_BREAK_ROOM_CRATE_2,
+        RC_TH_BREAK_HALLWAY_INNER_CRATE,
+        RAND_INF_TH_BREAK_HALLWAY_INNER_CRATE,
     },
     {
-        RC_GF_BREAK_ROOM_CRATE_3,
-        RAND_INF_GF_BREAK_ROOM_CRATE_3,
+        RC_TH_BREAK_ROOM_RIGHT_CRATE,
+        RAND_INF_TH_BREAK_ROOM_RIGHT_CRATE,
     },
     {
-        RC_GF_BREAK_ROOM_CRATE_4,
-        RAND_INF_GF_BREAK_ROOM_CRATE_4,
+        RC_TH_BREAK_ROOM_LEFT_CRATE,
+        RAND_INF_TH_BREAK_ROOM_LEFT_CRATE,
     },
     {
-        RC_GF_NORTH_F1_CARPENTER_CRATE,
-        RAND_INF_GF_NORTH_F1_CARPENTER_CRATE,
+        RC_TH_1_TORCH_CELL_CRATE,
+        RAND_INF_TH_1_TORCH_CELL_CRATE,
     },
     {
-        RC_GF_NORTH_F3_CARPENTER_CRATE,
-        RAND_INF_GF_NORTH_F3_CARPENTER_CRATE,
+        RC_TH_DEAD_END_CELL_CRATE,
+        RAND_INF_TH_DEAD_END_CELL_CRATE,
     },
     {
-        RC_GF_SOUTH_F2_CARPENTER_CRATE_1,
-        RAND_INF_GF_SOUTH_F2_CARPENTER_CRATE_1,
+        RC_TH_DOUBLE_CELL_LEFT_CRATE,
+        RAND_INF_TH_DOUBLE_CELL_LEFT_CRATE,
     },
     {
-        RC_GF_SOUTH_F2_CARPENTER_CRATE_2,
-        RAND_INF_GF_SOUTH_F2_CARPENTER_CRATE_2,
+        RC_TH_DOUBLE_CELL_RIGHT_CRATE,
+        RAND_INF_TH_DOUBLE_CELL_RIGHT_CRATE,
     },
     {
         RC_HW_BEFORE_QUICKSAND_CRATE,
@@ -3713,7 +3761,7 @@ std::thread randoThread;
 
 void GenerateRandomizerImgui(std::string seed = "") {
     CVarSetInteger(CVAR_GENERAL("RandoGenerating"), 1);
-    CVarSave();
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
     auto ctx = Rando::Context::GetInstance();
     // RANDOTODO proper UI for selecting if a spoiler loaded should be used for settings
     Rando::Settings::GetInstance()->SetAllToContext();
@@ -4137,7 +4185,7 @@ void RandomizerSettingsWindow::DrawElement() {
                 { Rando::Tricks::Tag::NOVICE, true },   { Rando::Tricks::Tag::INTERMEDIATE, true },
                 { Rando::Tricks::Tag::ADVANCED, true }, { Rando::Tricks::Tag::EXPERT, true },
                 { Rando::Tricks::Tag::EXTREME, true },  { Rando::Tricks::Tag::EXPERIMENTAL, true },
-                //{ Rando::Tricks::Tag::GLITCH, false },
+                { Rando::Tricks::Tag::GLITCH, false },
             };
             static ImGuiTextFilter trickSearch;
             UIWidgets::PushStyleInput(THEME_COLOR);

@@ -1671,6 +1671,8 @@ Play_Draw_skip:
     CLOSE_DISPS(gfxCtx);
 
     Interface_DrawTotalGameplayTimer(play);
+
+    Interface_DrawTotalHitsTaken(play);
 }
 
 time_t Play_GetRealTime() {

@@ -223,8 +223,16 @@ void RegisterGloomMode() {
     });
 
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerHealthChange>([](int amount) {
-        if (!CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0) || !GameInteractor::IsSaveLoaded())
+        if (!GameInteractor::IsSaveLoaded())
             return;
+
+        if (!CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0)) {
+            // increment hit counter here if gloom mode isnt enabled
+            if (amount < 0)
+                gSaveContext.ship.stats.count[COUNT_HITS_TAKEN] += 1;
+
+            return;
+        }
 
         if (amount < 0) {
             if (gSaveContext.isDoubleDefenseAcquired && CVarGetInteger(CVAR_ENHANCEMENT("GloomModeDoubleHits"), 0)) {

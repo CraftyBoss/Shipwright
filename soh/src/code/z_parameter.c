@@ -6482,6 +6482,65 @@ void Interface_DrawTotalGameplayTimer(PlayState* play) {
     }
 }
 
+void Interface_DrawTotalHitsTaken(PlayState* play) {
+    // Draw hits taken based on the Gameplay Stats.
+
+    if (CVarGetInteger(CVAR_GAMEPLAY_STATS("ShowIngameHitsTaken"), 0) && gSaveContext.fileNum >= 0 &&
+         gSaveContext.fileNum <= 2) {
+
+        s32 rectLeftOri = OTRGetRectDimensionFromLeftEdge(24 + Left_HUD_Margin);
+        s32 rectTopOri = 73;
+        s32 rectLeft;
+        s32 rectTop;
+        s32 rectWidth = 8;
+        s32 rectHeightOri = 16;
+        s32 rectHeight;
+
+        OPEN_DISPS(play->state.gfxCtx);
+
+        gDPSetCombineLERP(OVERLAY_DISP++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0, 0,
+                          PRIMITIVE, 0);
+
+        gDPSetOtherMode(OVERLAY_DISP++,
+                        G_AD_DISABLE | G_CD_DISABLE | G_CK_NONE | G_TC_FILT | G_TF_BILERP | G_TT_IA16 | G_TL_TILE |
+                            G_TD_CLAMP | G_TP_NONE | G_CYC_1CYCLE | G_PM_NPRIMITIVE,
+                        G_AC_NONE | G_ZS_PRIM | G_RM_XLU_SURF | G_RM_XLU_SURF2);
+
+        char* totalTimeText = GameplayStats_GetTotalHits();
+        size_t textLength = strlen(totalTimeText);
+
+        for (size_t i = 0; i < textLength; i++) {
+            rectLeft = rectLeftOri + (i * 8);
+            rectTop = rectTopOri;
+            rectHeight = rectHeightOri;
+
+            gDPLoadTextureBlock(OVERLAY_DISP++, Ship_GetCharFontTexture(totalTimeText[i]), G_IM_FMT_I, G_IM_SIZ_8b,
+                                rectWidth,
+                                rectHeight, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK,
+                                G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
+
+            // Draw text shadow
+            gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, 255);
+            gDPSetEnvColor(OVERLAY_DISP++, 255, 255, 255, 255);
+            gSPWideTextureRectangle(OVERLAY_DISP++, rectLeft << 2, rectTop << 2, (rectLeft + rectWidth) << 2,
+                                    (rectTop + rectHeight) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+
+            // Draw regular text. Change color based on if the timer is paused, running or the game is completed.
+            gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, 255);
+
+            // Offset text so underlaying shadow is to the bottom right of the text.
+            rectLeft -= 1;
+            rectTop -= 1;
+
+            gSPWideTextureRectangle(OVERLAY_DISP++, rectLeft << 2, rectTop << 2, (rectLeft + rectWidth) << 2,
+                                    (rectTop + rectHeight) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+        }
+        free(totalTimeText);
+
+        CLOSE_DISPS(play->state.gfxCtx);
+    }
+}
+
 void Interface_Update(PlayState* play) {
     static u8 D_80125B60 = 0;
     static s16 sPrevTimeIncrement = 0;

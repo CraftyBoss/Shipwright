@@ -286,6 +286,16 @@ extern "C" char* GameplayStats_GetCurrentTime() {
     return timeChar;
 }
 
+extern "C" char* GameplayStats_GetTotalHits() {
+    std::string hitsString = "Hits Taken: ";
+    hitsString.append(formatIntGameplayStat(gSaveContext.ship.stats.count[COUNT_HITS_TAKEN]).c_str());
+
+    const size_t stringLength = hitsString.length();
+    char* hitsChar = (char*)malloc(stringLength + 1); // We need to use malloc so we can free this from a C file.
+    strcpy(hitsChar, hitsString.c_str());
+    return hitsChar;
+}
+
 void LoadStatsVersion1() {
     SaveManager::Instance->LoadCharArray("buildVersion", gSaveContext.ship.stats.buildVersion,
                                          ARRAY_COUNT(gSaveContext.ship.stats.buildVersion));
@@ -559,9 +569,7 @@ void DrawGameplayStatsCountsTab() {
         }
     }
     GameplayStatsRow("Damage Taken:", formatIntGameplayStat(gSaveContext.ship.stats.count[COUNT_DAMAGE_TAKEN]));
-    if (CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0)) {
-        GameplayStatsRow("Hits Taken:", formatIntGameplayStat(gSaveContext.ship.stats.count[COUNT_HITS_TAKEN]));
-    }
+    GameplayStatsRow("Hits Taken:", formatIntGameplayStat(gSaveContext.ship.stats.count[COUNT_HITS_TAKEN]));
     GameplayStatsRow("Sword Swings:", formatIntGameplayStat(gSaveContext.ship.stats.count[COUNT_SWORD_SWINGS]));
     GameplayStatsRow("Steps Taken:", formatIntGameplayStat(gSaveContext.ship.stats.count[COUNT_STEPS]));
     // If using MM Bunny Hood enhancement, show how long it's been equipped (not counting pause time)
@@ -655,6 +663,8 @@ void DrawGameplayStatsOptionsTab() {
                                 .Color(THEME_COLOR));
     UIWidgets::CVarCheckbox("Show additional detail timers", CVAR_GAMEPLAY_STATS("ShowAdditionalTimers"),
                             UIWidgets::CheckboxOptions().Color(THEME_COLOR));
+    UIWidgets::CVarCheckbox("Show total hits taken in-game", CVAR_GAMEPLAY_STATS("ShowIngameHitsTaken"),
+        (UIWidgets::CheckboxOptions)UIWidgets::CheckboxOptions().Color(THEME_COLOR));
     UIWidgets::CVarCheckbox("Show Debug Info", CVAR_GAMEPLAY_STATS("ShowDebugInfo"),
                             UIWidgets::CheckboxOptions().Color(THEME_COLOR));
 }

@@ -8,6 +8,7 @@ extern "C" {
 #endif
 uint64_t GetUnixTimestamp(void);
 char* GameplayStats_GetCurrentTime();
+char* GameplayStats_GetTotalHits();
 #ifdef __cplusplus
 };
 #endif

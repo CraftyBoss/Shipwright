@@ -1328,16 +1328,6 @@ void SohMenu::AddMenuEnhancements() {
         .Options(IntSliderOptions().Min(5).Max(120).DefaultValue(60).Format("%d Seconds").Tooltip(
             "Adjusts the amount of time Nayru's Love will stay active once used."));
 
-    AddWidget(path, "One Time Use Nayru's Love", WIDGET_CVAR_CHECKBOX)
-        .CVar(CVAR_ENHANCEMENT("NayruLoveSingleUse"))
-        .Options(CheckboxOptions().Tooltip(
-            "Using Nayru's Love will remove itself from your inventory."));
-
-    AddWidget(path, "Nayru's Love Timer Length", WIDGET_CVAR_SLIDER_INT)
-        .CVar(CVAR_ENHANCEMENT("NayruLoveEndTime"))
-        .Options(IntSliderOptions().Min(5).Max(120).DefaultValue(60).Format("%d Seconds").Tooltip(
-            "Adjusts the amount of time Nayru's Love will stay active once used."));
-
     path.column = SECTION_COLUMN_3;
     AddWidget(path, "Enemies", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Hyper Bosses", WIDGET_CVAR_CHECKBOX)

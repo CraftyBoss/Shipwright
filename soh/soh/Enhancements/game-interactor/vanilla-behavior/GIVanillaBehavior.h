@@ -2222,6 +2222,20 @@ typedef enum {
     // - `s32` limbCount
     // - `*Vec3s` frameTable
     VB_LOAD_PLAYER_ANIMATION_FRAME,
+    // #### `result`
+    // ```c
+    // CHECK_BTN_ALL(input->press.button, BTN_R)
+    // ```
+    // #### `args`
+    // - None
+    VB_SHIELD_FROM_BUTTON_HOLD,
+    // #### `result`
+    // ```c
+    // true
+    // ```
+    // #### `args`
+    // - None
+    VB_EXIT_FIRST_PERSON_MODE_FROM_BUTTON,
 } GIVanillaBehavior;
 
 #endif

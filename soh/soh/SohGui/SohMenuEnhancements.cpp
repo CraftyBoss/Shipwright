@@ -886,6 +886,10 @@ void SohMenu::AddMenuEnhancements() {
         .Options(CheckboxOptions().Tooltip("Aiming with a Bow or Slingshot will display a reticle as with the Hookshot "
                                            "when the projectile is ready to fire."));
 
+    AddWidget(path, "Arrow Type Cycling", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("ArrowCycle"))
+        .Options(CheckboxOptions().Tooltip("While aiming the bow, use R to cycle between Normal, Fire, Ice and Light arrows."));
+
     path.column = SECTION_COLUMN_3;
     AddWidget(path, "Hookshot", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Targetable Hookshot Reticle", WIDGET_CVAR_CHECKBOX)

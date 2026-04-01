@@ -1248,7 +1248,6 @@ void SohMenu::AddMenuEnhancements() {
             info.options->disabled = CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0);
             info.options->disabledTooltip = "This option is disabled because \"Gloom Mode\" is turned on.";
         })
-        .Callback([](WidgetInfo& info) { UpdatePermanentHeartLossState(); })
         .Options(CheckboxOptions().Tooltip(
             "When you lose 4 quarters of a heart you will permanently lose that Heart Container.\n\n"
             "Disabling this after the fact will restore your Heart Containers."));
@@ -1259,7 +1258,6 @@ void SohMenu::AddMenuEnhancements() {
             info.options->disabled = CVarGetInteger(CVAR_ENHANCEMENT("PermanentHeartLoss"), 0);
             info.options->disabledTooltip = "This option is disabled because \"Permanent Heart Loss\" is turned on.";
         })
-        .Callback([](WidgetInfo& info) { UpdatePermanentHeartLossState(); })
         .Options(CheckboxOptions().Tooltip("Whenever you take damage, regardless of the amount, your Heart Containers will decrease by one."));
 
     AddWidget(path, "Double Defense Protection", WIDGET_CVAR_CHECKBOX)

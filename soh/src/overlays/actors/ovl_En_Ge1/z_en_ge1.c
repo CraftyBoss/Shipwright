@@ -8,7 +8,6 @@
 #include "vt.h"
 #include "objects/object_ge1/object_ge1.h"
 #include "soh/Enhancements/randomizer/randomizer_entrance.h"
-#include "soh/OTRGlobals.h"
 #include "soh/ResourceManagerHelpers.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
@@ -247,7 +246,7 @@ void EnGe1_KickPlayer(EnGe1* this, PlayState* play) {
         }
 
         if (IS_RANDO) {
-            Entrance_OverrideGeurdoGuardCapture();
+            Entrance_OverrideGerudoGuardCapture();
         }
 
         play->transitionType = TRANS_TYPE_CIRCLE(TCA_STARBURST, TCC_BLACK, TCS_FAST);

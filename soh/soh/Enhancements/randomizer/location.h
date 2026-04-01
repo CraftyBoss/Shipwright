@@ -121,7 +121,6 @@ class Location {
     bool IsOverworld() const;
     bool IsShop() const;
     bool IsVanillaCompletion() const;
-    uint32_t Getuint32_t() const;
     const HintText& GetHint() const;
     RandomizerGet GetVanillaItem() const;
     int16_t GetVanillaPrice() const;
@@ -246,6 +245,27 @@ class Location {
                                RandomizerHintTextKey hintKey, RandomizerGet vanillaItem,
                                SpoilerCollectionCheck collectionCheck);
 
+    static Location Tree(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_, SceneID scene_,
+                         int32_t actorParams_, std::string&& shortName_, RandomizerHintTextKey hintKey,
+                         RandomizerGet vanillaItem, SpoilerCollectionCheck collectionCheck);
+
+    static Location NLTree(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_, SceneID scene_,
+                           int32_t actorParams_, std::string&& shortName_, RandomizerHintTextKey hintKey,
+                           RandomizerGet vanillaItem, SpoilerCollectionCheck collectionCheck);
+
+    static Location Bush(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_, SceneID scene_,
+                         int32_t actorParams_, std::string&& shortName_, RandomizerHintTextKey hintKey,
+                         RandomizerGet vanillaItem, SpoilerCollectionCheck collectionCheck);
+
+    static Location Sign(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_, SceneID scene_,
+                         int32_t actorParams_, std::string&& shortName_, RandomizerHintTextKey hintKey,
+                         ActorID actorId_, SpoilerCollectionCheck collectionCheck);
+
+    static Location WonderItem(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_,
+                               SceneID scene_, int32_t actorParams_, std::string&& shortName_,
+                               RandomizerHintTextKey hintKey, RandomizerGet vanillaItem,
+                               SpoilerCollectionCheck collectionCheck);
+
     static Location OtherHint(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_,
                               ActorID actorId_, SceneID scene_, std::string&& shortName_, std::string&& spoilerName_);
 
@@ -255,9 +275,25 @@ class Location {
     static Location OtherHint(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_,
                               ActorID actorId_, SceneID scene_, std::string&& shortName_);
 
-    static Location Fairy(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_, SceneID scene_,
-                          int32_t actorParams_, std::string&& shortName_, RandomizerHintTextKey hintKey,
-                          SpoilerCollectionCheck collectionCheck);
+    static Location FountainFairy(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_,
+                                  SceneID scene_, int32_t actorParams_, std::string&& shortName_,
+                                  RandomizerHintTextKey hintKey, SpoilerCollectionCheck collectionCheck);
+
+    static Location StoneFairy(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_,
+                               SceneID scene_, int32_t actorParams_, std::string&& shortName_,
+                               RandomizerHintTextKey hintKey, SpoilerCollectionCheck collectionCheck);
+
+    static Location BeanFairy(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_,
+                              SceneID scene_, int32_t actorParams_, std::string&& shortName_,
+                              RandomizerHintTextKey hintKey, SpoilerCollectionCheck collectionCheck);
+
+    static Location SongFairy(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_,
+                              SceneID scene_, int32_t actorParams_, std::string&& shortName_,
+                              RandomizerHintTextKey hintKey, SpoilerCollectionCheck collectionCheck);
+
+    static Location ButterflyFairy(RandomizerCheck rc, RandomizerCheckQuest quest_, RandomizerCheckArea area_,
+                                   SceneID scene_, int32_t actorParams_, std::string&& shortName_,
+                                   RandomizerHintTextKey hintKey, SpoilerCollectionCheck collectionCheck);
 
     static Location HintStone(RandomizerCheck rc, RandomizerCheckQuest quest_, SceneID scene_, int32_t actorParams_,
                               std::string&& shortName_);

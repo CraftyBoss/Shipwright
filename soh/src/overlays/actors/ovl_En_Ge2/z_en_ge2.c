@@ -10,7 +10,6 @@
 #include "soh/Enhancements/randomizer/randomizer_entrance.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 #include <assert.h>
-#include "soh/OTRGlobals.h"
 #include "soh/ResourceManagerHelpers.h"
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED)
@@ -255,7 +254,7 @@ void EnGe2_CaptureClose(EnGe2* this, PlayState* play) {
         }
 
         if (IS_RANDO) {
-            Entrance_OverrideGeurdoGuardCapture();
+            Entrance_OverrideGerudoGuardCapture();
         }
 
         play->transitionType = TRANS_TYPE_CIRCLE(TCA_STARBURST, TCC_BLACK, TCS_FAST);
@@ -285,7 +284,7 @@ void EnGe2_CaptureCharge(EnGe2* this, PlayState* play) {
         }
 
         if (IS_RANDO) {
-            Entrance_OverrideGeurdoGuardCapture();
+            Entrance_OverrideGerudoGuardCapture();
         }
 
         play->transitionType = TRANS_TYPE_CIRCLE(TCA_STARBURST, TCC_BLACK, TCS_FAST);

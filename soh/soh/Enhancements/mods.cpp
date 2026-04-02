@@ -116,6 +116,10 @@ static bool isVoidDamage = false;
 static const int invulnTimer = -60;
 
 void GloomModeVoidOut() {
+    if (!CVarGetInteger(CVAR_ENHANCEMENT("GloomModeDoVoidOut"), 0)) {
+        return;
+    }
+
     Audio_PlaySoundGeneral(NA_SE_OC_ABYSS, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
                            &gSfxDefaultReverb);
     Play_TriggerRespawn(gPlayState);

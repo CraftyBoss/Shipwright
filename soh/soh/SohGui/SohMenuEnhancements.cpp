@@ -1260,6 +1260,15 @@ void SohMenu::AddMenuEnhancements() {
         })
         .Options(CheckboxOptions().Tooltip("Whenever you take damage, regardless of the amount, your Heart Containers will decrease by one."));
 
+    AddWidget(path, "Void out on Damage", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("GloomModeDoVoidOut"))
+        .PreFunc([](WidgetInfo& info) {
+            info.options->disabled = !CVarGetInteger(CVAR_ENHANCEMENT("GloomMode"), 0);
+            info.options->disabledTooltip = "This option is disabled because \"Gloom Mode\" is turned off.";
+        })
+        .Options(CheckboxOptions().Tooltip(
+            "Whenever you take damage, a void out will trigger, resetting you to the last spawn position."));
+
     AddWidget(path, "Double Defense Protection", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("GloomModeDoubleHits"))
         .PreFunc([](WidgetInfo& info) {

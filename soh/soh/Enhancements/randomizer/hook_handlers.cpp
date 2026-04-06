@@ -452,7 +452,7 @@ void RandomizerOnItemReceiveHandler(GetItemEntry receivedItemEntry) {
         gSaveContext.healthAccumulator = MAX_HEALTH; // Refill 20 hearts
         if ((s32)(gSaveContext.inventory.questItems & 0xF0000000) == 0x40000000) {
             gSaveContext.inventory.questItems ^= 0x40000000;
-            if (!CVarGetInteger(CVAR_ENHANCEMENT("PreventNewHeartContainer"), 0)) {
+            if (GameInteractor_Should(VB_HEARTS_INCREASE_WITH_CONTAINERS, true)) {
                 gSaveContext.healthCapacity += FULL_HEART_HEALTH;
                 gSaveContext.health += FULL_HEART_HEALTH;
             }

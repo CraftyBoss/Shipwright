@@ -5958,7 +5958,16 @@ void Interface_Draw(PlayState* play) {
                 case TIMER_STATE_ENV_HAZARD_INIT:
                     sTimerStateTimer = 20;
                     sTimerNextSecondTimer = 20;
-                    gSaveContext.timerSeconds = gSaveContext.health >> 1;
+
+                    int minBurnTimeValue = FULL_HEART_HEALTH * CVarGetInteger(CVAR_ENHANCEMENT("BurnTimerMinValue"), 3);
+
+                    if (gSaveContext.health < minBurnTimeValue &&
+                        gSaveContext.healthCapacity < minBurnTimeValue) {
+                        gSaveContext.timerSeconds = minBurnTimeValue >> 1;
+                    }
+                    else {
+                        gSaveContext.timerSeconds = gSaveContext.health >> 1;
+                    }
                     gSaveContext.timerState = TIMER_STATE_ENV_HAZARD_PREVIEW;
                     break;
                 case TIMER_STATE_ENV_HAZARD_PREVIEW:

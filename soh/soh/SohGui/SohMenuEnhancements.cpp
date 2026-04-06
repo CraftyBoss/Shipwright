@@ -1406,6 +1406,15 @@ void SohMenu::AddMenuEnhancements() {
         .Options(IntSliderOptions().Min(5).Max(120).DefaultValue(60).Format("%d Seconds").Tooltip(
             "Adjusts the amount of time Nayru's Love will stay active once used."));
 
+    AddWidget(path, "Minimum Burn Timer Value", WIDGET_CVAR_SLIDER_INT)
+        .CVar(CVAR_ENHANCEMENT("BurnTimerMinValue"))
+        .Options(IntSliderOptions()
+                     .Min(0)
+                     .Max(20)
+                     .DefaultValue(0)
+                     .Format("%d Hearts")
+                     .Tooltip("Adjusts the minimum amount of time (in hearts) before burning in heated areas."));
+
     path.column = SECTION_COLUMN_3;
     AddWidget(path, "Enemies", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Hyper Bosses", WIDGET_CVAR_CHECKBOX)

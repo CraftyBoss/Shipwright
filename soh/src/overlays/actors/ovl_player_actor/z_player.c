@@ -5408,7 +5408,7 @@ s32 Player_ActionHandler_1(Player* this, PlayState* play) {
                 this->unk_45C.x = this->actor.world.pos.x + ((doorDirection * -120.0f) * sp74);
                 this->unk_45C.z = this->actor.world.pos.z + ((doorDirection * -120.0f) * sp78);
 
-                doorShutter->isActive = 1;
+                doorShutter->unk_164 = 1;
                 func_80832224(this);
 
                 if (this->doorTimer != 0) {

@@ -45,7 +45,7 @@ typedef void (*DoorShutterActionFunc)(struct DoorShutter*, PlayState*);
 
 typedef struct DoorShutter {
     /* 0x0000 */ DynaPolyActor dyna;
-    /* 0x0164 */ s16 isActive;
+    /* 0x0164 */ s16 unk_164;
     /* 0x0166 */ s16 jabuDoorClosedAmount;
     /* 0x0168 */ s16 bossDoorTexIndex;
     /* 0x016A */ u8 doorType;

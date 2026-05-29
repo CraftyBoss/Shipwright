@@ -217,12 +217,12 @@ static DoorShutterStyleInfo sStyleInfo[] = {
 };
 
 typedef struct DoorShutterGfxInfo {
-    /* 0x0000 */ Gfx* doorDL;
-    /* 0x0004 */ Gfx* barsDL;
-    /* 0x0008 */ u8 barsOpenOffsetY;
+    /* 0x0000 */ Gfx* doorDL; // a
+    /* 0x0004 */ Gfx* barsDL; // b
+    /* 0x0008 */ u8 barsOpenOffsetY; // c
     /* 0x0009 */ u8 barsOffsetZ;
-    /* 0x000A */ u8 rangeSides;
-    /* 0x000B */ u8 rangeY;
+    /* 0x000A */ u8 rangeSides; // e
+    /* 0x000B */ u8 rangeY; // f
 } DoorShutterGfxInfo;
 
 static DoorShutterGfxInfo sGfxInfo[] = {
@@ -535,7 +535,7 @@ s32 DoorShutter_GetPlayerSide(DoorShutter* this, PlayState* play) {
     if (!Player_InCsMode(play)) {
         DoorShutterGfxInfo* temp_v1 = &sGfxInfo[this->gfxType];
         f32 temp_f2 =
-            DoorShutter_GetPlayerDistance(play, this, (this->gfxType != 3) ? 0.0f : 80.0f, temp_v1->e, temp_v1->f);
+            DoorShutter_GetPlayerDistance(play, this, (this->gfxType != 3) ? 0.0f : 80.0f, temp_v1->rangeSides, temp_v1->rangeY);
 
         if (fabsf(temp_f2) < 50.0f) {
             s16 phi_v0 = player->actor.shape.rot.y - this->dyna.actor.shape.rot.y;
@@ -570,9 +570,9 @@ void DoorShutter_WaitClear(DoorShutter* this, PlayState* play) {
 void DoorShutter_Unopenable(DoorShutter* this, PlayState* play) {
 }
 
-void func_80996B0C(DoorShutter* this, PlayState* play) {
-    if (this->isActive != 0) {
-        DoorShutter_SetupAction(this, func_80997004);
+void DoorShutter_Idle(DoorShutter* this, PlayState* play) {
+    if (this->unk_164 != 0) {
+        DoorShutter_SetupAction(this, DoorShutter_Open);
         this->dyna.actor.velocity.y = 0.0f;
         if (this->unlockTimer != 0) {
             Flags_SetSwitch(play, this->dyna.actor.params & 0x3F);
@@ -758,7 +758,7 @@ void DoorShutter_SetupClosed(DoorShutter* this, PlayState* play) {
         func_80097534(play, &play->roomCtx);
         Play_SetupRespawnPoint(play, RESPAWN_MODE_DOWN, 0x0EFF);
     }
-    this->isActive = 0;
+    this->unk_164 = 0;
     this->dyna.actor.velocity.y = 0.0f;
     if (DoorShutter_SetupDoor(this, play) && !(player->stateFlags1 & PLAYER_STATE1_CARRYING_ACTOR)) {
         DoorShutter_SetupAction(this, DoorShutter_WaitPlayerSurprised);
@@ -809,7 +809,7 @@ void DoorShutter_GohmaBlockFall(DoorShutter* this, PlayState* play) {
         if (!Flags_GetEventChkInf(EVENTCHKINF_BEGAN_GOHMA_BATTLE)) {
             BossGoma* parent = (BossGoma*)this->dyna.actor.parent;
 
-            this->isActive = 10;
+            this->unk_164 = 10;
             Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_STONE_BOUND);
             DoorShutter_RequestQuakeAndRumble(play, 2, 10, parent->subCameraId);
             Actor_SpawnFloorDustRing(play, &this->dyna.actor, &this->dyna.actor.world.pos, 70.0f, 20, 8.0f, 500, 10,
@@ -821,10 +821,10 @@ void DoorShutter_GohmaBlockFall(DoorShutter* this, PlayState* play) {
 void DoorShutter_GohmaBlockBounce(DoorShutter* this, PlayState* play) {
     f32 mult;
 
-    if (this->isActive != 0) {
-        this->isActive--;
-        mult = sinf(this->isActive * 250.0f / 100.0f);
-        this->dyna.actor.shape.yOffset = this->isActive * 3.0f / 10.0f * mult;
+    if (this->unk_164 != 0) {
+        this->unk_164--;
+        mult = sinf(this->unk_164 * 250.0f / 100.0f);
+        this->dyna.actor.shape.yOffset = this->unk_164 * 3.0f / 10.0f * mult;
     }
 }
 
@@ -832,10 +832,10 @@ void DoorShutter_PhantomGanonBarsRaise(DoorShutter* this, PlayState* play) {
     f32 phi_f0;
 
     osSyncPrintf("FHG SAKU START !!\n");
-    if (this->isActive != 0) {
-        this->isActive--;
+    if (this->unk_164 != 0) {
+        this->unk_164--;
     }
-    phi_f0 = (this->isActive % 2 != 0) ? -3.0f : 0.0f;
+    phi_f0 = (this->unk_164 % 2 != 0) ? -3.0f : 0.0f;
     Math_SmoothStepToF(&this->dyna.actor.world.pos.y, -34.0f + phi_f0, 1.0f, 20.0f, 0.0f);
     osSyncPrintf("FHG SAKU END !!\n");
 }

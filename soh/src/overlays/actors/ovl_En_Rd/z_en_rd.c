@@ -765,8 +765,8 @@ void EnRd_UpdateDamage(EnRd* this, PlayState* play) {
     s32 pad;
     Player* player = GET_PLAYER(play);
 
-    if ((gSaveContext.sunsSongState != SUNSSONG_INACTIVE) && (this->actor.shape.rot.x == 0) && (this->unk_318 == 0) &&
-        (this->unk_31B != 9) && (this->unk_31B != 10) && (this->unk_31B != 1)) {
+    if ((gSaveContext.sunsSongState != SUNSSONG_INACTIVE) && (this->actor.shape.rot.x == 0) && (this->action == 0) &&
+        (this->action != 9) && (this->action != 10) && (this->action != 1)) {
 
         if (CVarGetInteger(CVAR_ENHANCEMENT("OOTSunSongOnly"), 0)) {
             if ((INV_CONTENT(ITEM_OCARINA_TIME) == ITEM_OCARINA_TIME)) {

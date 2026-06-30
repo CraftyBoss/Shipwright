@@ -2830,13 +2830,6 @@ typedef enum {
     // #### `args`
     // - `*EnBox`
     VB_CHEST_USE_ICE_EFFECT,
-    // #### `result`
-    // ```c
-    // CHECK_BTN_ALL(input->press.button, BTN_R)
-    // ```
-    // #### `args`
-    // - None
-    VB_SHIELD_FROM_BUTTON_HOLD,
 
     // #### `result`
     // ```c
@@ -2901,13 +2894,6 @@ typedef enum {
     // - None
     
     VB_CHECK_BOMBCHU_CAPACITY,
-	// #### `result`
-    // ```c
-    // true
-    // ```
-    // #### `args`
-    // - None
-    VB_EXIT_FIRST_PERSON_MODE_FROM_BUTTON,
     // #### `result`
     // ```c
     // false

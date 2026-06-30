@@ -968,10 +968,6 @@ void SohMenu::AddMenuEnhancements() {
             "Press the R button to cycle to the next available arrow type. "
             "Only works when aiming and only cycles to arrow types you own with sufficient magic."));
 
-    AddWidget(path, "Arrow Type Cycling", WIDGET_CVAR_CHECKBOX)
-        .CVar(CVAR_ENHANCEMENT("ArrowCycle"))
-        .Options(CheckboxOptions().Tooltip("While aiming the bow, use R to cycle between Normal, Fire, Ice and Light arrows."));
-
     path.column = SECTION_COLUMN_3;
     AddWidget(path, "Hookshot", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Targetable Hookshot Reticle", WIDGET_CVAR_CHECKBOX)

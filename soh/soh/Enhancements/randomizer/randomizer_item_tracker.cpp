@@ -3,13 +3,11 @@
 #include <string>
 #include <vector>
 
-#include <libultraship/libultraship.h>
 #include <libultraship/controller/controldeck/ControlDeck.h>
 
+#include "randomizer_check_objects.h"
 #include "randomizer_check_tracker.h"
 #include "randomizer_item_tracker.h"
-#include "randomizerTypes.h"
-#include "soh/cvar_prefixes.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/OTRGlobals.h"
 #include "soh/ResourceManagerHelpers.h"
@@ -19,6 +17,9 @@
 #include "soh/SohGui/UIWidgets.hpp"
 #include "soh/util.h"
 #include "soh/Enhancements/randomizer/randomizer.h"
+#include "soh/Enhancements/randomizer/dungeon.h"
+
+#include <fast/Fast3dGui.h>
 
 extern "C" {
 #include <z64.h>
@@ -577,56 +578,50 @@ ItemTrackerNumbers GetItemCurrentAndMax(ItemTrackerItem item) {
             // Though the ammo/capacity naming doesn't really make sense for keys, we are
             // hijacking the same system to display key counts as there are enough similarities
             result.currentAmmo = MAX(gSaveContext.inventory.dungeonKeys[item.data], 0);
-            result.currentCapacity = gSaveContext.ship.stats.dungeonKeys[item.data];
-            switch (item.data) {
-                case SCENE_FOREST_TEMPLE:
-                    result.maxCapacity = FOREST_TEMPLE_SMALL_KEY_MAX;
-                    break;
-                case SCENE_FIRE_TEMPLE:
-                    result.maxCapacity = FIRE_TEMPLE_SMALL_KEY_MAX;
-                    break;
-                case SCENE_WATER_TEMPLE:
-                    result.maxCapacity = WATER_TEMPLE_SMALL_KEY_MAX;
-                    break;
-                case SCENE_SPIRIT_TEMPLE:
-                    result.maxCapacity = SPIRIT_TEMPLE_SMALL_KEY_MAX;
-                    break;
-                case SCENE_SHADOW_TEMPLE:
-                    result.maxCapacity = SHADOW_TEMPLE_SMALL_KEY_MAX;
-                    break;
-                case SCENE_BOTTOM_OF_THE_WELL:
-                    result.maxCapacity = BOTTOM_OF_THE_WELL_SMALL_KEY_MAX;
-                    break;
-                case SCENE_GERUDO_TRAINING_GROUND:
-                    result.maxCapacity = GERUDO_TRAINING_GROUND_SMALL_KEY_MAX;
-                    break;
-                case SCENE_THIEVES_HIDEOUT:
-                    if (IS_RANDO) {
-                        switch (OTRGlobals::Instance->gRandomizer->GetRandoSettingValue(RSK_GERUDO_FORTRESS)) {
-                            case RO_GF_CARPENTERS_NORMAL:
-                                result.maxCapacity = GERUDO_FORTRESS_SMALL_KEY_MAX;
-                                break;
-                            case RO_GF_CARPENTERS_FAST:
-                                result.maxCapacity = 1;
-                                break;
-                            case RO_GF_CARPENTERS_FREE:
-                                result.maxCapacity = 0;
-                                break;
-                            default:
-                                result.maxCapacity = 0;
-                                SPDLOG_ERROR(
-                                    "Invalid value for RSK_GERUDO_FORTRESS: {}",
-                                    OTRGlobals::Instance->gRandomizer->GetRandoSettingValue(RSK_GERUDO_FORTRESS));
-                                assert(false);
-                                break;
+            if (item.data == SCENE_THIEVES_HIDEOUT) {
+                std::vector<uint8_t> DoorFlags = THIEVES_HIDEOUT_DOOR_FLAGS;
+                result.currentCapacity = Rando::FindTotalSmallKeys(&gSaveContext, SCENE_THIEVES_HIDEOUT, &DoorFlags);
+                result.maxCapacity = GERUDO_FORTRESS_SMALL_KEY_MAX;
+            } else {
+                result.currentCapacity = OTRGlobals::Instance->gRandoContext->GetDungeons()
+                                             ->GetDungeonFromScene(item.data)
+                                             ->GetTotalSmallKeys(&gSaveContext);
+                switch (item.data) {
+                    case SCENE_FOREST_TEMPLE:
+                        result.maxCapacity = FOREST_TEMPLE_SMALL_KEY_MAX;
+                        break;
+                    case SCENE_FIRE_TEMPLE:
+                        result.maxCapacity = FIRE_TEMPLE_SMALL_KEY_MAX;
+                        if (IS_RANDO &&
+                            !(OTRGlobals::Instance->gRandoContext->GetOption(RSK_KEYSANITY)
+                                  .Is(RO_DUNGEON_ITEM_LOC_ANYWHERE) ||
+                              OTRGlobals::Instance->gRandoContext->GetOption(RSK_KEYSANITY)
+                                  .Is(RO_DUNGEON_ITEM_LOC_OVERWORLD) ||
+                              OTRGlobals::Instance->gRandoContext->GetOption(RSK_KEYSANITY)
+                                  .Is(RO_DUNGEON_ITEM_LOC_ANY_DUNGEON)) &&
+                            OTRGlobals::Instance->gRandoContext->GetDungeon(Rando::FIRE_TEMPLE)->IsVanilla()) {
+                            result.currentCapacity = result.currentCapacity - 1;
                         }
-                    } else {
-                        result.maxCapacity = GERUDO_FORTRESS_SMALL_KEY_MAX;
-                    }
-                    break;
-                case SCENE_INSIDE_GANONS_CASTLE:
-                    result.maxCapacity = GANONS_CASTLE_SMALL_KEY_MAX;
-                    break;
+                        break;
+                    case SCENE_WATER_TEMPLE:
+                        result.maxCapacity = WATER_TEMPLE_SMALL_KEY_MAX;
+                        break;
+                    case SCENE_SPIRIT_TEMPLE:
+                        result.maxCapacity = SPIRIT_TEMPLE_SMALL_KEY_MAX;
+                        break;
+                    case SCENE_SHADOW_TEMPLE:
+                        result.maxCapacity = SHADOW_TEMPLE_SMALL_KEY_MAX;
+                        break;
+                    case SCENE_BOTTOM_OF_THE_WELL:
+                        result.maxCapacity = BOTTOM_OF_THE_WELL_SMALL_KEY_MAX;
+                        break;
+                    case SCENE_GERUDO_TRAINING_GROUND:
+                        result.maxCapacity = GERUDO_TRAINING_GROUND_SMALL_KEY_MAX;
+                        break;
+                    case SCENE_INSIDE_GANONS_CASTLE:
+                        result.maxCapacity = GANONS_CASTLE_SMALL_KEY_MAX;
+                        break;
+                }
             }
             break;
     }
@@ -806,8 +801,8 @@ void DrawItemCount(ItemTrackerItem item, bool hideMax) {
 void DrawEquip(ItemTrackerItem item) {
     bool hasEquip = HasEquipment(item);
     float iconSize = static_cast<float>(CVarGetInteger(CVAR_TRACKER_ITEM("IconSize"), 36));
-    ImGui::Image(Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                     hasEquip && IsValidSaveFile() ? item.name : item.nameFaded),
+    ImGui::Image(std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                     ->GetTextureByName(hasEquip && IsValidSaveFile() ? item.name : item.nameFaded),
                  ImVec2(iconSize, iconSize), ImVec2(0.0f, 0.0f), ImVec2(1, 1));
 
     Tooltip(SohUtils::GetItemName(item.id).c_str());
@@ -817,9 +812,10 @@ void DrawQuest(ItemTrackerItem item) {
     bool hasQuestItem = HasQuestItem(item);
     float iconSize = static_cast<float>(CVarGetInteger(CVAR_TRACKER_ITEM("IconSize"), 36));
     ImGui::BeginGroup();
-    ImGui::ImageWithBg(Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                           hasQuestItem && IsValidSaveFile() ? item.name : item.nameFaded),
-                       ImVec2(iconSize, iconSize), ImVec2(0, 0), ImVec2(1, 1));
+    ImGui::ImageWithBg(
+        std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+            ->GetTextureByName(hasQuestItem && IsValidSaveFile() ? item.name : item.nameFaded),
+        ImVec2(iconSize, iconSize), ImVec2(0, 0), ImVec2(1, 1));
 
     if (item.id == QUEST_SKULL_TOKEN) {
         DrawItemCount(item, false);
@@ -1216,8 +1212,8 @@ void DrawItem(ItemTrackerItem item) {
 
     ImGui::BeginGroup();
 
-    ImGui::Image(Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                     hasItem && IsValidSaveFile() ? item.name : item.nameFaded),
+    ImGui::Image(std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                     ->GetTextureByName(hasItem && IsValidSaveFile() ? item.name : item.nameFaded),
                  ImVec2(iconSize, iconSize), ImVec2(0, 0), ImVec2(1, 1));
 
     DrawItemCount(item, false);
@@ -1272,7 +1268,7 @@ void DrawItem(ItemTrackerItem item) {
         ImGui::PopStyleColor();
     }
 
-    if (item.id >= RG_BRONZE_SCALE && item.id <= RG_OPEN_CHEST) {
+    if (item.id == RG_BRONZE_SCALE) {
         ImVec2 p = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos(
             ImVec2(p.x + (iconSize / 2) - (ImGui::CalcTextSize(itemName.c_str()).x / 2), p.y - (iconSize + 2)));
@@ -1302,8 +1298,8 @@ void DrawBottle(ItemTrackerItem item) {
     }
 
     float iconSize = static_cast<float>(CVarGetInteger(CVAR_TRACKER_ITEM("IconSize"), 36));
-    ImGui::Image(Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                     hasItem && IsValidSaveFile() ? item.name : item.nameFaded),
+    ImGui::Image(std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                     ->GetTextureByName(hasItem && IsValidSaveFile() ? item.name : item.nameFaded),
                  ImVec2(iconSize, iconSize), ImVec2(0, 0), ImVec2(1, 1));
 
     Tooltip(SohUtils::GetItemName(item.id).c_str());
@@ -1318,12 +1314,12 @@ void DrawDungeonItem(ItemTrackerItem item) {
     bool hasSmallKey = GameInteractor::IsSaveLoaded() ? ((gSaveContext.inventory.dungeonKeys[item.data]) >= 0) : false;
     ImGui::BeginGroup();
     if (itemId == ITEM_KEY_SMALL) {
-        ImGui::Image(Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                         hasSmallKey && IsValidSaveFile() ? item.name : item.nameFaded),
+        ImGui::Image(std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                         ->GetTextureByName(hasSmallKey && IsValidSaveFile() ? item.name : item.nameFaded),
                      ImVec2(iconSize, iconSize), ImVec2(0, 0), ImVec2(1, 1));
     } else {
-        ImGui::Image(Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                         hasItem && IsValidSaveFile() ? item.name : item.nameFaded),
+        ImGui::Image(std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                         ->GetTextureByName(hasItem && IsValidSaveFile() ? item.name : item.nameFaded),
                      ImVec2(iconSize, iconSize), ImVec2(0, 0), ImVec2(1, 1));
     }
 
@@ -1368,8 +1364,8 @@ void DrawSong(ItemTrackerItem item) {
     ImVec2 p = ImGui::GetCursorScreenPos();
     bool hasSong = HasSong(item);
     ImGui::SetCursorScreenPos(ImVec2(p.x + 6, p.y));
-    ImGui::Image(Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName(
-                     hasSong && IsValidSaveFile() ? item.name : item.nameFaded),
+    ImGui::Image(std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui())
+                     ->GetTextureByName(hasSong && IsValidSaveFile() ? item.name : item.nameFaded),
                  ImVec2(iconSize / 1.5f, iconSize), ImVec2(0, 0), ImVec2(1, 1));
     Tooltip(SohUtils::GetQuestItemName(item.id).c_str());
 }
@@ -1829,7 +1825,7 @@ void ItemTrackerWindow::DrawElement() {
     int comboButton1Mask = buttonMap[CVarGetInteger(CVAR_TRACKER_ITEM("ComboButton1"), TRACKER_COMBO_BUTTON_L)];
     int comboButton2Mask = buttonMap[CVarGetInteger(CVAR_TRACKER_ITEM("ComboButton2"), TRACKER_COMBO_BUTTON_R)];
     OSContPad* buttonsPressed =
-        std::dynamic_pointer_cast<LUS::ControlDeck>(Ship::Context::GetInstance()->GetControlDeck())->GetPads();
+        std::dynamic_pointer_cast<LUS::ControlDeck>(Ship::Context::GetRawInstance()->GetControlDeck())->GetPads();
     bool comboButtonsHeld = buttonsPressed != nullptr && buttonsPressed[0].button & comboButton1Mask &&
                             buttonsPressed[0].button & comboButton2Mask;
     bool isPaused = CVarGetInteger(CVAR_TRACKER_ITEM("ShowOnlyPaused"), 0) == 0 ||

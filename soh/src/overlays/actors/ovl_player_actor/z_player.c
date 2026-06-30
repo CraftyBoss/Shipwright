@@ -24,7 +24,6 @@
 #include "soh/Enhancements/item-tables/ItemTableTypes.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/Enhancements/randomizer/randomizer_entrance.h"
-#include <overlays/actors/ovl_En_Partner/z_en_partner.h>
 #include "soh/Enhancements/cosmetics/cosmeticsTypes.h"
 #include "soh/Enhancements/enhancementTypes.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
@@ -345,26 +344,6 @@ void Player_Action_CsAction(Player* this, PlayState* play);
 
 #pragma region[SoH]
 u8 gWalkSpeedToggle;
-
-s32 spawn_boomerang_ivan(EnPartner* this, PlayState* play) {
-    if (!CVarGetInteger(CVAR_ENHANCEMENT("IvanCoopModeEnabled"), 0)) {
-        return 0;
-    }
-
-    f32 posX = (Math_SinS(this->actor.shape.rot.y) * 1.0f) + this->actor.world.pos.x;
-    f32 posZ = (Math_CosS(this->actor.shape.rot.y) * 1.0f) + this->actor.world.pos.z;
-    s32 yaw = this->actor.shape.rot.y;
-    EnBoom* boomerang = (EnBoom*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_BOOM, posX, this->actor.world.pos.y + 7.0f,
-                                             posZ, this->actor.focus.rot.x, yaw, 0, 0);
-
-    this->boomerangActor = &boomerang->actor;
-    if (boomerang != NULL) {
-        boomerang->returnTimer = 20;
-        Audio_PlayActorSound2(&this->actor, NA_SE_IT_BOOMERANG_THROW);
-    }
-
-    return 1;
-}
 
 // Sets a flag according to which type of flag is specified in player->pendingFlag.flagType
 // and which flag is specified in player->pendingFlag.flagID.
@@ -2321,6 +2300,8 @@ void Player_InitHookshotIA(PlayState* play, Player* this) {
     this->heldActor =
         Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_ARMS_HOOK, this->actor.world.pos.x,
                            this->actor.world.pos.y, this->actor.world.pos.z, 0, this->actor.shape.rot.y, 0, 0);
+
+    GameInteractor_Should(VB_INIT_HOOKSHOT_IA, true, this);
 }
 
 void Player_InitBoomerangIA(PlayState* play, Player* this) {
@@ -3593,7 +3574,10 @@ int Player_CanUpdateItems(Player* this) {
  * depending on some conditions. See details below.
  */
 s32 Player_UpdateUpperBody(Player* this, PlayState* play) {
-    if (!(this->stateFlags1 & PLAYER_STATE1_ON_HORSE) && (this->actor.parent != NULL) && Player_HoldsHookshot(this)) {
+    if (this->actor.parent != NULL &&
+        GameInteractor_Should(VB_PREVENT_HOOKSHOT_PARENT_SOFTLOCK,
+                              !(this->stateFlags1 & PLAYER_STATE1_ON_HORSE) && Player_HoldsHookshot(this),
+                              &this->actor.parent->id)) {
         Player_SetupAction(play, this, Player_Action_80850AEC, 1);
         this->stateFlags3 |= PLAYER_STATE3_FLYING_WITH_HOOKSHOT;
         Player_AnimPlayOnce(play, this, &gPlayerAnim_link_hook_fly_start);
@@ -4705,7 +4689,7 @@ int func_8083816C(s32 arg0) {
 }
 
 void func_8083819C(Player* this, PlayState* play) {
-    if (this->currentShield == PLAYER_SHIELD_DEKU && (CVarGetInteger(CVAR_CHEAT("FireproofDekuShield"), 0) == 0)) {
+    if (GameInteractor_Should(VB_BURN_SHIELD, this->currentShield == PLAYER_SHIELD_DEKU, this)) {
         Actor_Spawn(&play->actorCtx, play, ACTOR_ITEM_SHIELD, this->actor.world.pos.x, this->actor.world.pos.y,
                     this->actor.world.pos.z, 0, 0, 0, 1);
         Inventory_DeleteEquipment(play, EQUIP_TYPE_SHIELD);
@@ -5756,7 +5740,7 @@ s32 func_8083A6AC(Player* this, PlayState* play) {
 
         if (BgCheck_EntityLineTest1(&play->colCtx, &this->actor.world.pos, &sp74, &sp68, &sp84, true, false, false,
                                     true, &sp80) &&
-            ((ABS(sp84->normal.y) < 600) || (CVarGetInteger(CVAR_CHEAT("ClimbEverything"), 0) != 0))) {
+            GameInteractor_Should(VB_SURFACE_ANGLE_IS_CLIMBABLE, ABS(sp84->normal.y) < 600)) {
             f32 nx = COLPOLY_GET_NORMAL(sp84->normal.x);
             f32 ny = COLPOLY_GET_NORMAL(sp84->normal.y);
             f32 nz = COLPOLY_GET_NORMAL(sp84->normal.z);
@@ -7375,8 +7359,9 @@ s32 Player_ActionHandler_2(Player* this, PlayState* play) {
                 // getting bombchus need to show the cutscene) and whenever the player doesn't have the item yet. In
                 // rando, we're overruling this because we need to keep showing the cutscene because those items can be
                 // randomized and thus it's important to keep showing the cutscene.
-                uint8_t showItemCutscene = play->sceneNum == SCENE_BOMBCHU_BOWLING_ALLEY ||
-                                           Item_CheckObtainability(giEntry.itemId) == ITEM_NONE || IS_RANDO;
+                uint8_t showItemCutscene = play->sceneNum == SCENE_BOMBCHU_BOWLING_ALLEY || IS_RANDO ||
+                                           giEntry.modIndex == MOD_RANDOMIZER ||
+                                           Item_CheckObtainability(giEntry.itemId) == ITEM_NONE;
 
                 // Only skip cutscenes for drops when they're items/consumables from bushes/rocks/enemies.
                 uint8_t isDropToSkip =
@@ -7395,8 +7380,8 @@ s32 Player_ActionHandler_2(Player* this, PlayState* play) {
                 // the player already has because those items could be a randomized item coming from scrubs,
                 // freestanding PoH's and keys. So we need to once again overrule this specifically for items coming
                 // from bushes/rocks/enemies when the player has already picked that item up.
-                uint8_t skipItemCutsceneRando =
-                    IS_RANDO && Item_CheckObtainability(giEntry.itemId) != ITEM_NONE && isDropToSkip;
+                uint8_t skipItemCutsceneRando = IS_RANDO && giEntry.modIndex == MOD_NONE &&
+                                                Item_CheckObtainability(giEntry.itemId) != ITEM_NONE && isDropToSkip;
 
                 // Show cutscene when picking up a item.
                 if (showItemCutscene && !skipItemCutscene && !skipItemCutsceneRando) {
@@ -8125,11 +8110,7 @@ void func_8084029C(Player* this, f32 arg1) {
         arg1 = 7.25f;
     }
 
-    if ((this->currentBoots == PLAYER_BOOTS_HOVER ||
-         (CVarGetInteger(CVAR_ENHANCEMENT("IvanCoopModeEnabled"), 0) && this->ivanFloating)) &&
-        !(this->actor.bgCheckFlags & 1) &&
-        (this->hoverBootsTimer != 0 ||
-         (CVarGetInteger(CVAR_ENHANCEMENT("IvanCoopModeEnabled"), 0) && this->ivanFloating))) {
+    if ((this->currentBoots == PLAYER_BOOTS_HOVER) && !(this->actor.bgCheckFlags & 1) && (this->hoverBootsTimer != 0)) {
         func_8002F8F0(&this->actor, NA_SE_PL_HOBBERBOOTS_LV - SFX_FLAG);
     } else if (func_8084021C(this->unk_868, arg1, 29.0f, 10.0f) || func_8084021C(this->unk_868, arg1, 29.0f, 24.0f)) {
         Player_PlaySteppingSfx(this, this->linearVelocity);
@@ -9888,6 +9869,10 @@ void Player_Action_Roll(Player* this, PlayState* play) {
                 }
             }
 
+            if (GameInteractor_Should(VB_PLAYER_ROLL_CHAIN, false, this, play, sControlInput, sFloorType)) {
+                return;
+            }
+
             if ((this->skelAnime.curFrame < 15.0f) || !Player_ActionHandler_7(this, play)) {
                 if (this->skelAnime.curFrame >= 20.0f) {
                     func_8083A060(this, play);
@@ -9906,6 +9891,7 @@ void Player_Action_Roll(Player* this, PlayState* play) {
                     speedTarget = 3.0f;
                 }
 
+                GameInteractor_Should(VB_PLAYER_ROLL_STEER, false, this, play, yawTarget);
                 func_8083DF68(this, speedTarget, this->actor.shape.rot.y);
 
                 if (func_8084269C(play, this)) {
@@ -11178,17 +11164,14 @@ void Player_UpdateInterface(PlayState* play, Player* this) {
 s32 Player_UpdateHoverBoots(Player* this) {
     s32 canHoverOnGround;
 
-    if ((this->currentBoots == PLAYER_BOOTS_HOVER ||
-         (CVarGetInteger(CVAR_ENHANCEMENT("IvanCoopModeEnabled"), 0) && this->ivanFloating)) &&
-        (this->hoverBootsTimer != 0)) {
+    if ((this->currentBoots == PLAYER_BOOTS_HOVER) && (this->hoverBootsTimer != 0)) {
         this->hoverBootsTimer--;
     } else {
         this->hoverBootsTimer = 0;
     }
 
     canHoverOnGround =
-        (this->currentBoots == PLAYER_BOOTS_HOVER ||
-         (CVarGetInteger(CVAR_ENHANCEMENT("IvanCoopModeEnabled"), 0) && this->ivanFloating)) &&
+        (this->currentBoots == PLAYER_BOOTS_HOVER) &&
         ((this->actor.yDistToWater >= 0.0f) || (func_80838144(sFloorType) >= 0) || func_8083816C(sFloorType));
 
     if (canHoverOnGround && (this->actor.bgCheckFlags & 1) && (this->hoverBootsTimer != 0)) {
@@ -11357,56 +11340,7 @@ void Player_ProcessSceneCollision(PlayState* play, Player* this) {
 
         sTouchedWallFlags = func_80041DB8(&play->colCtx, this->actor.wallPoly, this->actor.wallBgId);
 
-        // conflicts arise from these two being enabled at once, and with ClimbEverything on, FixVineFall is redundant
-        // anyway
-        if (CVarGetInteger(CVAR_ENHANCEMENT("FixVineFall"), 0) && !CVarGetInteger(CVAR_CHEAT("ClimbEverything"), 0)) {
-            /* This fixes the "started climbing a wall and then immediately fell off" bug.
-             * The main idea is if a climbing wall is detected, double-check that it will
-             * still be valid once climbing begins by doing a second raycast with a small
-             * margin to make sure it still hits a climbable poly. Then update the flags
-             * in sTouchedWallFlags again and proceed as normal.
-             */
-            if (sTouchedWallFlags & 8) {
-                Vec3f checkPosA;
-                Vec3f checkPosB;
-                f32 yawCos;
-                f32 yawSin;
-                s32 hitWall;
-
-                /* Angle the raycast slightly out towards the side based on the angle of
-                 * attack the player takes coming at the climb wall. This is necessary because
-                 * the player's XZ position actually wobbles very slightly while climbing
-                 * due to small rounding errors in the sin/cos lookup tables. This wobble
-                 * can cause wall checks while climbing to be slightly left or right of
-                 * the wall check to start the climb. By adding this buffer it accounts for
-                 * any possible wobble. The end result is the player has to be further than
-                 * some epsilon distance from the edge of the climbing poly to actually
-                 * start the climb. I divide it by 2 to make that epsilon slightly smaller,
-                 * mainly for visuals. Using the full yawDiff leaves a noticeable gap on
-                 * the edges that can't be climbed. But with the half distance it looks like
-                 * the player is climbing right on the edge, and still works.
-                 */
-                yawCos = Math_CosS(this->actor.wallYaw - (yawDiff / 2) + 0x8000);
-                yawSin = Math_SinS(this->actor.wallYaw - (yawDiff / 2) + 0x8000);
-                checkPosA.x = this->actor.world.pos.x + (-20.0f * yawSin);
-                checkPosA.z = this->actor.world.pos.z + (-20.0f * yawCos);
-                checkPosB.x = this->actor.world.pos.x + (50.0f * yawSin);
-                checkPosB.z = this->actor.world.pos.z + (50.0f * yawCos);
-                checkPosB.y = checkPosA.y = this->actor.world.pos.y + 26.0f;
-
-                hitWall = BgCheck_EntityLineTest1(&play->colCtx, &checkPosA, &checkPosB, &sInteractWallCheckResult,
-                                                  &wallPoly, true, false, false, true, &wallBgId);
-
-                if (hitWall) {
-                    this->actor.wallPoly = wallPoly;
-                    this->actor.wallBgId = wallBgId;
-                    this->actor.wallYaw = Math_Atan2S(wallPoly->normal.z, wallPoly->normal.x);
-                    yawDiff = this->actor.shape.rot.y - (s16)(this->actor.wallYaw + 0x8000);
-
-                    sTouchedWallFlags = func_80041DB8(&play->colCtx, this->actor.wallPoly, this->actor.wallBgId);
-                }
-            }
-        }
+        GameInteractor_Should(VB_REVALIDATE_CLIMBED_WALL, true, play, this, &sTouchedWallFlags, &yawDiff);
 
         sShapeYawToTouchedWall = ABS(yawDiff);
 
@@ -11432,7 +11366,7 @@ void Player_ProcessSceneCollision(PlayState* play, Player* this) {
         if ((this->actor.bgCheckFlags & 0x200) && (sShapeYawToTouchedWall < 0x3000)) {
             CollisionPoly* wallPoly = this->actor.wallPoly;
 
-            if (ABS(wallPoly->normal.y) < 600 || (CVarGetInteger(CVAR_CHEAT("ClimbEverything"), 0) != 0)) {
+            if (GameInteractor_Should(VB_SURFACE_ANGLE_IS_CLIMBABLE, ABS(wallPoly->normal.y) < 600)) {
                 f32 wallPolyNormalX = COLPOLY_GET_NORMAL(wallPoly->normal.x);
                 f32 wallPolyNormalY = COLPOLY_GET_NORMAL(wallPoly->normal.y);
                 f32 wallPolyNormalZ = COLPOLY_GET_NORMAL(wallPoly->normal.z);
@@ -12484,18 +12418,18 @@ void Player_DrawGameplay(PlayState* play, Player* this, s32 lod, Gfx* cullDList,
             MATRIX_TOMTX(bunnyEarMtx);
         }
 
-        if (this->currentMask != PLAYER_MASK_BUNNY || !CVarGetInteger(CVAR_ENHANCEMENT("HideBunnyHood"), 0)) {
-            gSPDisplayList(POLY_OPA_DISP++, sMaskDlists[this->currentMask - 1]);
+        if (GameInteractor_Should(VB_DRAW_PLAYER_MASK, true, this->currentMask, play)) {
+            if (this->currentMask != PLAYER_MASK_BUNNY || !CVarGetInteger(CVAR_ENHANCEMENT("HideBunnyHood"), 0)) {
+                gSPDisplayList(POLY_OPA_DISP++, sMaskDlists[this->currentMask - 1]);
+            }
         }
 
         if (CVarGetInteger(CVAR_GENERAL("FixIceTrapWithBunnyHood"), 1))
             Matrix_Pop();
     }
 
-    if ((this->currentBoots == PLAYER_BOOTS_HOVER ||
-         (CVarGetInteger(CVAR_ENHANCEMENT("IvanCoopModeEnabled"), 0) && this->ivanFloating)) &&
-        !(this->actor.bgCheckFlags & 1) && !(this->stateFlags1 & PLAYER_STATE1_ON_HORSE) &&
-        (this->hoverBootsTimer != 0)) {
+    if ((this->currentBoots == PLAYER_BOOTS_HOVER) && !(this->actor.bgCheckFlags & 1) &&
+        !(this->stateFlags1 & PLAYER_STATE1_ON_HORSE) && (this->hoverBootsTimer != 0)) {
         s32 sp5C;
         s32 hoverBootsTimer = this->hoverBootsTimer;
 
@@ -14252,13 +14186,15 @@ s32 func_8084DFF4(PlayState* play, Player* this) {
         play->msgCtx.msgMode = MSGMODE_TEXT_DONE;
     } else {
         if (Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING) {
-            if (GameInteractor_Should(VB_PLAY_NABOORU_CAPTURED_CS, this->getItemId == GI_GAUNTLETS_SILVER)) {
-                play->nextEntranceIndex = ENTR_DESERT_COLOSSUS_EAST_EXIT;
-                play->transitionTrigger = TRANS_TRIGGER_START;
-                gSaveContext.nextCutsceneIndex = 0xFFF1;
-                play->transitionType = TRANS_TYPE_SANDSTORM_END;
-                this->stateFlags1 &= ~PLAYER_STATE1_IN_CUTSCENE;
-                Player_TryCsAction(play, NULL, 8);
+            if (this->getItemId == GI_GAUNTLETS_SILVER) {
+                if (GameInteractor_Should(VB_PLAY_NABOORU_CAPTURED_CS, true)) {
+                    play->nextEntranceIndex = ENTR_DESERT_COLOSSUS_EAST_EXIT;
+                    play->transitionTrigger = TRANS_TRIGGER_START;
+                    gSaveContext.nextCutsceneIndex = 0xFFF1;
+                    play->transitionType = TRANS_TYPE_SANDSTORM_END;
+                    this->stateFlags1 &= ~PLAYER_STATE1_IN_CUTSCENE;
+                    Player_TryCsAction(play, NULL, 8);
+                }
             }
 
             // Set unk_862 to 0 early to not have the game draw non-custom colored models for a split second.

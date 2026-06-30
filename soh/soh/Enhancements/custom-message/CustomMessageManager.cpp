@@ -119,8 +119,6 @@ extern "C" MessageTableEntry* sGerMessageEntryTablePtr;
 extern "C" MessageTableEntry* sFraMessageEntryTablePtr;
 
 CustomMessage CustomMessage::LoadVanillaMessageTableEntry(uint16_t textId) {
-    const char* foundSeg;
-    const char* nextSeg;
     MessageTableEntry* msgEntry = sNesMessageEntryTablePtr;
     u16 bufferId = textId;
     CustomMessage msg;
@@ -276,16 +274,16 @@ void CustomMessage::LoadIntoFont() {
     switch (gSaveContext.language) {
         case LANGUAGE_FRA:
             msgCtx->msgLength = font->msgLength =
-                SohUtils::CopyStringToCharBuffer(buffer, GetFrench(MF_RAW), maxBufferSize);
+                static_cast<u32>(SohUtils::CopyStringToCharBuffer(buffer, GetFrench(MF_RAW), maxBufferSize));
             break;
         case LANGUAGE_GER:
             msgCtx->msgLength = font->msgLength =
-                SohUtils::CopyStringToCharBuffer(buffer, GetGerman(MF_RAW), maxBufferSize);
+                static_cast<u32>(SohUtils::CopyStringToCharBuffer(buffer, GetGerman(MF_RAW), maxBufferSize));
             break;
         case LANGUAGE_ENG:
         default:
             msgCtx->msgLength = font->msgLength =
-                SohUtils::CopyStringToCharBuffer(buffer, GetEnglish(MF_RAW), maxBufferSize);
+                static_cast<u32>(SohUtils::CopyStringToCharBuffer(buffer, GetEnglish(MF_RAW), maxBufferSize));
             break;
     }
 }

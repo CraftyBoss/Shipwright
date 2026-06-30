@@ -2,9 +2,7 @@
 
 #include "randomizerTypes.h"
 #include "z64save.h"
-#include "item_location.h"
 #include "item_override.h"
-#include "soh/Enhancements/custom-message/text.h"
 #include "hint.h"
 #include "fishsanity.h"
 #include "trial.h"
@@ -33,6 +31,7 @@ class DungeonInfo;
 class TrialInfo;
 class Trials;
 class Kaleido;
+class ItemLocation;
 
 class Context {
   public:
@@ -128,7 +127,6 @@ class Context {
     std::vector<RandomizerCheck> everyPossibleLocation = {};
     std::set<RandomizerGet> possibleIceTrapModels = {};
     std::unordered_map<RandomizerCheck, RandomizerGet> iceTrapModels = {};
-    std::vector<OptionValue*> VanillaLogicDefaults = {};
     std::array<uint8_t, 5> hashIconIndexes = {};
     bool playthroughBeatable = false;
     bool allLocationsReachable = false;

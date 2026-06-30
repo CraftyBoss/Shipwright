@@ -9,12 +9,8 @@
 
 #include <algorithm>
 #include <array>
-#include <bit>
-#include <map>
 #include <unordered_map>
 #include <string>
-#include <libultraship/bridge.h>
-#include <libultraship/libultraship.h>
 #include <spdlog/fmt/fmt.h>
 #include "soh/OTRGlobals.h"
 #include "soh/cvar_prefixes.h"
@@ -23,13 +19,9 @@
 extern "C" {
 #include <z64.h>
 #include "z64math.h"
-#include "variables.h"
 #include "functions.h"
 #include "macros.h"
 extern PlayState* gPlayState;
-
-#include "textures/icon_item_static/icon_item_static.h"
-#include "textures/icon_item_24_static/icon_item_24_static.h"
 }
 
 #define DEKUNUTS_FLOWER 10
@@ -614,7 +606,7 @@ void CreateActorSpecificData() {
     };
 
     actorSpecificData[ACTOR_EN_SKB] = [](s16 params) -> s16 {
-        u8 size = params;
+        u8 size = static_cast<u8>(params);
         ImGui::InputScalar("Size", ImGuiDataType_U8, &size);
 
         return size;
@@ -753,7 +745,7 @@ void CreateActorSpecificData() {
             piece = false;
         }
 
-        u8 textId = params;
+        u8 textId = static_cast<u8>(params);
         if (!piece && !fishingSign) {
             if (ImGui::InputScalar("Text ID", ImGuiDataType_U8, &textId)) {
                 textId |= 0x300;

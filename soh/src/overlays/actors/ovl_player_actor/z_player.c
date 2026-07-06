@@ -5846,6 +5846,7 @@ void func_8083AA10(Player* this, PlayState* play) {
                         if (WaterBox_GetSurface1(play, &play->colCtx, sp44.x, sp44.z, &sp3C, &sp50) &&
                             ((sp3C - sp40) > 50.0f)) {
                             func_808389E8(this, &gPlayerAnim_link_normal_run_jump_water_fall, 6.0f, play);
+                            GameInteractor_Should(VB_PLAYER_LIMIT_DIVE_XZ_SPEED, true, this);
                             Player_SetupAction(play, this, Player_Action_80844A44, 0);
                             return;
                         }
@@ -7153,29 +7154,10 @@ void func_8083DFE0(Player* this, f32* arg1, s16* arg2) {
     s16 yawDiff = this->yaw - *arg2;
 
     if (this->meleeWeaponState == 0) {
-        float maxSpeed = R_RUN_SPEED_LIMIT / 100.0f;
-
-        if (CVarGetInteger(CVAR_ENHANCEMENT("MMBunnyHood"), BUNNY_HOOD_VANILLA) == BUNNY_HOOD_FAST_AND_JUMP &&
-            this->currentMask == PLAYER_MASK_BUNNY) {
-            maxSpeed *= 1.5f;
+        if (GameInteractor_Should(VB_PLAYER_LIMIT_JUMP_SPEED, true, this)) {
+            this->linearVelocity =
+                CLAMP(this->linearVelocity, -(R_RUN_SPEED_LIMIT / 100.0f), (R_RUN_SPEED_LIMIT / 100.0f));
         }
-
-        if (CVarGetFloat(CVAR_CHEAT("SpeedModifier.Value"), 1.0f) != 1.0f &&
-            !CVarGetInteger(CVAR_CHEAT("SpeedModifier.DoesntChangeJump"), 0)) {
-            if (CVarGetInteger(CVAR_CHEAT("SpeedModifier.SpeedToggle"), 0)) {
-                if (gWalkSpeedToggle) {
-                    maxSpeed *= CVarGetFloat(CVAR_CHEAT("SpeedModifier.Value"), 1.0f);
-                }
-            } else {
-                const s32 mod1Mask = CVarGetInteger(CVAR_CHEAT("SpeedModifier.Btn"), BTN_CUSTOM_MODIFIER1);
-
-                if (mod1Mask != 0 && CHECK_BTN_ALL(sControlInput->cur.button, mod1Mask)) {
-                    maxSpeed *= CVarGetFloat(CVAR_CHEAT("SpeedModifier.Value"), 1.0f);
-                }
-            }
-        }
-
-        this->linearVelocity = CLAMP(this->linearVelocity, -maxSpeed, maxSpeed);
     }
 
     if (ABS(yawDiff) > 0x6000) {
@@ -8882,8 +8864,8 @@ void func_80841EE4(Player* this, PlayState* play) {
 }
 
 void Player_Action_80842180(Player* this, PlayState* play) {
-    f32 sp2C;
-    s16 sp2A;
+    f32 speedTarget;
+    s16 yawTarget;
 
     this->stateFlags2 |= PLAYER_STATE2_DISABLE_ROTATION_Z_TARGET;
     func_80841EE4(this, play);
@@ -8894,33 +8876,15 @@ void Player_Action_80842180(Player* this, PlayState* play) {
             return;
         }
 
-        Player_GetMovementSpeedAndYaw(this, &sp2C, &sp2A, SPEED_MODE_CURVED, play);
+        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
 
-        if (!func_8083C484(this, &sp2C, &sp2A)) {
+        if (!func_8083C484(this, &speedTarget, &yawTarget)) {
+            GameInteractor_Should(VB_PLAYER_MODIFY_RUN_SPEED, true, this, &speedTarget);
 
-            if (CVarGetInteger(CVAR_ENHANCEMENT("MMBunnyHood"), BUNNY_HOOD_VANILLA) != BUNNY_HOOD_VANILLA &&
-                this->currentMask == PLAYER_MASK_BUNNY) {
-                sp2C *= 1.5f;
-            }
-
-            if (CVarGetFloat(CVAR_CHEAT("SpeedModifier.Value"), 1.0f) != 1.0f) {
-                if (CVarGetInteger(CVAR_CHEAT("SpeedModifier.SpeedToggle"), 0)) {
-                    if (gWalkSpeedToggle) {
-                        sp2C *= CVarGetFloat(CVAR_CHEAT("SpeedModifier.Value"), 1.0f);
-                    }
-                } else {
-                    const s32 mod1Mask = CVarGetInteger(CVAR_CHEAT("SpeedModifier.Btn"), BTN_CUSTOM_MODIFIER1);
-
-                    if (mod1Mask != 0 && CHECK_BTN_ALL(sControlInput->cur.button, mod1Mask)) {
-                        sp2C *= CVarGetFloat(CVAR_CHEAT("SpeedModifier.Value"), 1.0f);
-                    }
-                }
-            }
-
-            func_8083DF68(this, sp2C, sp2A);
+            func_8083DF68(this, speedTarget, yawTarget);
             func_8083DDC8(this, play);
 
-            if ((this->linearVelocity == 0.0f) && (sp2C == 0.0f)) {
+            if ((this->linearVelocity == 0.0f) && (speedTarget == 0.0f)) {
                 func_8083C0B8(this, play);
             }
         }
@@ -9883,8 +9847,7 @@ void Player_Action_Roll(Player* this, PlayState* play) {
                 Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
 
                 // `speedTarget` at this point is the speed that would be used for regular walking.
-                // Rolling speed is 1.5 times faster than what the walking speed would be for the current control stick
-                // input.
+                // Rolling speed is 1.5 times faster than walking speed would be for the current control stick input.
                 speedTarget *= 1.5f;
 
                 if ((speedTarget < 3.0f) || (this->controlStickDirections[this->controlStickDataIndex] != 0)) {
@@ -12738,59 +12701,24 @@ void func_8084AEEC(Player* this, f32* arg1, f32 arg2, s16 arg3) {
     f32 temp1;
     f32 temp2;
 
-    // #region SOH [Enhancement]
-    f32 swimMod = 1.0f;
+    temp1 = this->skelAnime.curFrame - 10.0f;
 
-    if (CVarGetFloat(CVAR_CHEAT("SpeedModifier.Value"), 1.0f) != 1.0f) {
-        if (CVarGetInteger(CVAR_CHEAT("SpeedModifier.SpeedToggle"), 0) == 1) {
-            if (gWalkSpeedToggle) {
-                swimMod *= CVarGetFloat(CVAR_CHEAT("SpeedModifier.Value"), 1.0f);
-            }
-            // sControlInput is NULL to prevent inputs while surfacing after obtaining an underwater item so we want to
-            // ignore it for that case
-        } else if (sControlInput != NULL) {
-            const s32 mod1Mask = CVarGetInteger(CVAR_CHEAT("SpeedModifier.Btn"), BTN_CUSTOM_MODIFIER1);
-
-            if (mod1Mask != 0 && CHECK_BTN_ALL(sControlInput->cur.button, mod1Mask)) {
-                swimMod *= CVarGetFloat(CVAR_CHEAT("SpeedModifier.Value"), 1.0f);
-            }
-        }
-        temp1 = this->skelAnime.curFrame - 10.0f;
-
-        temp2 = (R_RUN_SPEED_LIMIT / 100.0f) * 0.8f * swimMod;
-        if (*arg1 > temp2) {
-            *arg1 = temp2;
-        }
-
-        if ((0.0f < temp1) && (temp1 < 10.0f)) {
-            temp1 *= 6.0f;
-        } else {
-            temp1 = 0.0f;
-            arg2 = 0.0f;
-        }
-
-        Math_AsymStepToF(arg1, arg2 * 0.8f * swimMod, temp1, (fabsf(*arg1) * 0.02f) + 0.05f);
-        Math_ScaledStepToS(&this->yaw, arg3, 1600);
-        // #endregion
-    } else {
-
-        temp1 = this->skelAnime.curFrame - 10.0f;
-
-        temp2 = (R_RUN_SPEED_LIMIT / 100.0f) * 0.8f;
-        if (*arg1 > temp2) {
-            *arg1 = temp2;
-        }
-
-        if ((0.0f < temp1) && (temp1 < 10.0f)) {
-            temp1 *= 6.0f;
-        } else {
-            temp1 = 0.0f;
-            arg2 = 0.0f;
-        }
-
-        Math_AsymStepToF(arg1, arg2 * 0.8f, temp1, (fabsf(*arg1) * 0.02f) + 0.05f);
-        Math_ScaledStepToS(&this->yaw, arg3, 1600);
+    temp2 = (R_RUN_SPEED_LIMIT / 100.0f) * 0.8f;
+    GameInteractor_Should(VB_PLAYER_MODIFY_SWIM_SPEED, true, this, &temp2, sControlInput != NULL);
+    if (*arg1 > temp2) {
+        *arg1 = temp2;
     }
+
+    if ((0.0f < temp1) && (temp1 < 10.0f)) {
+        temp1 *= 6.0f;
+    } else {
+        temp1 = 0.0f;
+        arg2 = 0.0f;
+    }
+
+    GameInteractor_Should(VB_PLAYER_MODIFY_SWIM_SPEED, true, this, &arg2, sControlInput != NULL);
+    Math_AsymStepToF(arg1, arg2 * 0.8f, temp1, (fabsf(*arg1) * 0.02f) + 0.05f);
+    Math_ScaledStepToS(&this->yaw, arg3, 1600);
 }
 
 // #region SOH [Enhancement]
@@ -13998,14 +13926,11 @@ void func_8084DBC4(PlayState* play, Player* this, f32 arg2) {
 
     Player_GetMovementSpeedAndYaw(this, &sp2C, &sp2A, SPEED_MODE_LINEAR, play);
     func_8084AEEC(this, &this->linearVelocity, sp2C * 0.5f, sp2A);
-    // Original implementation of func_8084AEEC (SurfaceWithoutSwimMod) to prevent velocity increases via swim mod which
-    // push Link into the air #region SOH [Enhancement]
-    if (CVarGetFloat(CVAR_CHEAT("SpeedModifier.Value"), 1.0f) != 1.0f) {
-        SurfaceWithoutSwimMod(this, &this->actor.velocity.y, arg2, this->yaw);
-        // #endregion
-    } else {
-        func_8084AEEC(this, &this->actor.velocity.y, arg2, this->yaw);
-    }
+    // #region SOH [Enhancement]
+    // Use swim-mod-free variant for y (surfacing) velocity so an active swim speed modifier can't push Link into air.
+    // This is identical to func_8084AEEC when no modifier active (swimMod == 1.0f), thus safe to always use.
+    SurfaceWithoutSwimMod(this, &this->actor.velocity.y, arg2, this->yaw);
+    // #endregion
 }
 
 void Player_Action_8084DC48(Player* this, PlayState* play) {

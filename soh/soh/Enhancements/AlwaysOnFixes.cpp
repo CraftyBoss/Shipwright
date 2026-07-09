@@ -6,6 +6,7 @@ extern "C" {
 #include "functions.h"
 #include "variables.h"
 #include "src/overlays/actors/ovl_En_Go2/z_en_go2.h"
+#include "include/z64camera.h"
 #include "src/overlays/actors/ovl_En_Test/z_en_test.h"
 extern void Player_UseItem(PlayState*, Player*, s32);
 extern PlayState* gPlayState;
@@ -76,6 +77,32 @@ void RegisterAlwaysOnFixes() {
         Actor* actor = reinterpret_cast<Actor*>(refActor);
         if (actor->params != STALFOS_TYPE_2 && !EnTest_HasLivingNearby(actor)) {
             func_800F5B58();
+        }
+    });
+
+    // Handle first person aiming camera settings
+    COND_VB_SHOULD(VB_CHANGE_AIMING_CAMERA, true, {
+        s8* heldItemAction = va_arg(args, s8*);
+        s32* camMode = va_arg(args, s32*);
+
+        if (*heldItemAction == PLAYER_IA_BOW) {
+            if (CVarGetInteger(CVAR_ENHANCEMENT("BowSlingshotAmmoFix"), false) ||
+                CVarGetInteger(CVAR_ENHANCEMENT("EquipmentAlwaysVisible"), false)) {
+                *camMode = CAM_MODE_AIM_ADULT;
+            }
+        } else if (*heldItemAction == PLAYER_IA_SLINGSHOT) {
+            if (CVarGetInteger(CVAR_ENHANCEMENT("BowSlingshotAmmoFix"), false) ||
+                CVarGetInteger(CVAR_ENHANCEMENT("EquipmentAlwaysVisible"), false)) {
+                *camMode = CAM_MODE_AIM_CHILD;
+            }
+        } else if (*heldItemAction == PLAYER_IA_HOOKSHOT || *heldItemAction == PLAYER_IA_LONGSHOT) {
+            if (gPlayState->sceneNum == SCENE_LAKESIDE_LABORATORY) {
+                *camMode = CAM_MODE_AIM_ADULT; // Fix child Hookshot aiming in lab (CAM_MODE_AIM_CHILD is invalid there)
+            }
+        } else if (*heldItemAction == PLAYER_IA_BOOMERANG) {
+            if (CVarGetInteger(CVAR_ENHANCEMENT("BoomerangFirstPerson"), false)) {
+                *camMode = CAM_MODE_FIRST_PERSON;
+            }
         }
     });
 }

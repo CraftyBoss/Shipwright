@@ -19,6 +19,7 @@
 extern "C" {
 #include "z64save.h"
 extern SaveContext gSaveContext;
+extern ActiveSequence gActiveSeqs[4];
 }
 
 Vec3f pos = { 0.0f, 0.0f, 0.0f };
@@ -109,6 +110,8 @@ void UpdateCurrentBGM(u16 seqKey, SeqType seqType) {
     u16 curSeqId = func_800FA0B4(SEQ_PLAYER_BGM_MAIN);
     if (curSeqId == seqKey) {
         ReplayCurrentBGM();
+    } else if (curSeqId == NA_BGM_DISABLED) {
+        Audio_QueueSeqCmd(0x00000000 | seqKey);
     }
 }
 
@@ -337,7 +340,12 @@ void Draw_SfxTab(const std::string& tabId, SeqType type, const std::string& tabN
         const std::string lockedButton = ICON_FA_LOCK + hiddenKey;
         const std::string unlockedButton = ICON_FA_UNLOCK + hiddenKey;
         const int currentValue = CVarGetInteger(cvarKey.c_str(), defaultValue);
-        const bool isCurrentlyPlaying = currentValue == playingFromMenu || seqData.sequenceId == currentBGM;
+        bool isCurrentlyPlaying = currentValue == playingFromMenu || seqData.sequenceId == currentBGM;
+
+        // if playing no music, we must grab the sequence id directly from active seqs, as the sequence player is disabled by this point.
+        if (currentValue == NA_BGM_NO_MUSIC) {
+            isCurrentlyPlaying = seqData.sequenceId == gActiveSeqs[SEQ_PLAYER_BGM_MAIN].seqId;
+        }
 
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
@@ -350,8 +358,10 @@ void Draw_SfxTab(const std::string& tabId, SeqType type, const std::string& tabN
         ImGui::TableNextColumn();
         ImGui::PushItemWidth(-FLT_MIN);
         const int initialValue = map.contains(currentValue) ? currentValue : defaultValue;
+        const std::string comboLabel = currentValue != NA_BGM_NO_MUSIC ? map.at(initialValue).label : "None";
+
         UIWidgets::PushStyleCombobox(THEME_COLOR);
-        if (ImGui::BeginCombo(hiddenKey.c_str(), map.at(initialValue).label.c_str())) {
+        if (ImGui::BeginCombo(hiddenKey.c_str(), comboLabel.c_str())) {
             for (const auto& [value, seqData] : map) {
                 // If excluded as a replacement sequence, don't show in other dropdowns except the effect's own
                 // dropdown.
@@ -369,6 +379,16 @@ void Draw_SfxTab(const std::string& tabId, SeqType type, const std::string& tabN
                 if (currentValue == value) {
                     ImGui::SetItemDefaultFocus();
                 }
+            }
+
+            if (ImGui::Selectable("None")) {
+                CVarSetInteger(cvarKey.c_str(), NA_BGM_NO_MUSIC);
+                Ship::Context::GetRawInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
+                UpdateCurrentBGM(defaultValue, type);
+            }
+
+            if (currentValue == NA_BGM_NO_MUSIC) {
+                ImGui::SetItemDefaultFocus();
             }
 
             ImGui::EndCombo();

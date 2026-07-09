@@ -121,6 +121,7 @@ void EnGs_Destroy(Actor* thisx, PlayState* play) {
 s32 func_80A4E3EC(EnGs* this, PlayState* play) {
     s32 ret = 2;
     switch (Message_GetState(&play->msgCtx)) {
+        case TEXT_STATE_CHOICE:
         case TEXT_STATE_DONE:
             if (Message_ShouldAdvance(play)) {
                 switch (this->actor.textId) {
@@ -131,6 +132,10 @@ s32 func_80A4E3EC(EnGs* this, PlayState* play) {
                     default:
                         ret = 0;
                         break;
+                }
+
+                if (GameInteractor_Should(VB_GS_CONTINUE_TEXTBOX, false, this)) {
+                    ret = 1;
                 }
             }
             break;

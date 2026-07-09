@@ -355,6 +355,14 @@ void SohMenu::AddMenuEnhancements() {
         })
         .Options(CheckboxOptions().Tooltip("Allow Link to enter Jabu-Jabu without feeding him a fish."));
 
+    AddWidget(path, "Show all Gossip Stone Hints with Stone of Agony", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("TimeSavers.ShowHintsWithAgony"))
+        .PreFunc([](WidgetInfo& info) {
+            info.options->disabled = !IS_RANDO || RAND_GET_OPTION(RSK_GOSSIP_STONE_HINTS).Is(RO_GOSSIP_STONES_NONE);
+            info.options->disabledTooltip =
+                "This setting is only enabled in a randomizer save with gossip stone hints.";
+        });
+
     // Skips & Speed-ups
     path.sidebarName = "Skips & Speed-ups";
     AddSidebarEntry("Enhancements", path.sidebarName, 3);
